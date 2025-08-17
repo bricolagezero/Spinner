@@ -21,38 +21,38 @@ jobs:
           npm ci
           npm run build
 
-      # Upload built SPA
-      - name: Upload FRONTEND dist/ to /public_html/spinner/
+      - name: Upload FRONTEND dist/
         uses: SamKirkland/FTP-Deploy-Action@v4
         with:
-          server: ${{ secrets.SFTP_HOST }}
-          username: ${{ secrets.SFTP_USER }}
-          password: ${{ secrets.SFTP_PASS }}
+          server: 'ftp.digital.ch1-consulting.com'
+          username: 'github_admin@digital.ch1-consulting.com'
+          password: '+p0ZHMN@s^(B'
           protocol: ftps
+          port: 21
           server-dir: /public_html/spinner/
           local-dir: spinner-game/frontend/dist/
 
-      # Upload only the .htaccess for SPA routing
       - name: Upload SPA .htaccess
         uses: SamKirkland/FTP-Deploy-Action@v4
         with:
-          server: ${{ secrets.SFTP_HOST }}
-          username: ${{ secrets.SFTP_USER }}
-          password: ${{ secrets.SFTP_PASS }}
+          server: 'ftp.digital.ch1-consulting.com'
+          username: 'github_admin@digital.ch1-consulting.com'
+          password: '+p0ZHMN@s^(B'
           protocol: ftps
+          port: 21
           server-dir: /public_html/spinner/
           local-dir: spinner-game/frontend/
           exclude: |
             **
             !.htaccess
 
-      # Upload PHP API
-      - name: Upload API (PHP) to /public_html/spinner/api/
+      - name: Upload PHP API
         uses: SamKirkland/FTP-Deploy-Action@v4
         with:
-          server: ${{ secrets.SFTP_HOST }}
-          username: ${{ secrets.SFTP_USER }}
-          password: ${{ secrets.SFTP_PASS }}
+          server: 'ftp.digital.ch1-consulting.com'
+          username: 'github_admin@digital.ch1-consulting.com'
+          password: '+p0ZHMN@s^(B'
           protocol: ftps
+          port: 21
           server-dir: /public_html/spinner/api/
           local-dir: spinner-game/api/
