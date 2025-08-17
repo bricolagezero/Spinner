@@ -1,0 +1,39 @@
+name: Deploy to GoDaddy (spinner)
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload FRONTEND to /public_html/spinner/
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          protocol: ftps
+          server-dir: /public_html/spinner/
+          local-dir: frontend/dist/
+          exclude: "**/.DS_Store"
+          dangerous-clean-slate: true
+
+      - name: Upload API to /public_html/spinner/api/
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          protocol: ftps
+          server-dir: /public_html/spinner/api/
+          local-dir: api/
+          exclude: "**/.DS_Store"
