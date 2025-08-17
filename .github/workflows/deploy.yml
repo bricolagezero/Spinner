@@ -40,7 +40,7 @@ jobs:
       - name: Upload SPA .htaccess
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ftp.digital.ch1-consulting.com
+          server: ftp://digital.ch1-consulting.com
           username: github_admin@digital.ch1-consulting.com
           password: "+p0ZHMN@s^(B"
           protocol: ftps
