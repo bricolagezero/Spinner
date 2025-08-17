@@ -1,7 +1,7 @@
 name: Deploy to GoDaddy (spinner)
 on:
   push:
-    branches: [ main ]   # change if your default branch isn't 'main'
+    branches: [ main ]
 
 jobs:
   build-and-deploy:
@@ -16,12 +16,11 @@ jobs:
           node-version: '20'
 
       - name: Build frontend
-        working-directory: frontend
+        working-directory: spinner-game/frontend
         run: |
           npm ci
           npm run build
 
-      # Upload the built SPA
       - name: Upload FRONTEND (dist/) to /public_html/spinner/
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
@@ -29,10 +28,9 @@ jobs:
           username: ${{ secrets.SFTP_USER }}
           password: ${{ secrets.SFTP_PASS }}
           port: ${{ secrets.SFTP_PORT || 22 }}
-          local_path: ./frontend/dist/*
+          local_path: ./spinner-game/frontend/dist/*
           remote_path: /public_html/spinner
 
-      # Upload SPA .htaccess (for client-side routing like /game/<slug>)
       - name: Upload SPA .htaccess
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
@@ -40,10 +38,9 @@ jobs:
           username: ${{ secrets.SFTP_USER }}
           password: ${{ secrets.SFTP_PASS }}
           port: ${{ secrets.SFTP_PORT || 22 }}
-          local_path: ./frontend/.htaccess
+          local_path: ./spinner-game/frontend/.htaccess
           remote_path: /public_html/spinner
 
-      # Upload PHP API
       - name: Upload API (PHP) to /public_html/spinner/api/
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
@@ -51,5 +48,5 @@ jobs:
           username: ${{ secrets.SFTP_USER }}
           password: ${{ secrets.SFTP_PASS }}
           port: ${{ secrets.SFTP_PORT || 22 }}
-          local_path: ./api/*
+          local_path: ./spinner-game/api/*
           remote_path: /public_html/spinner/api
