@@ -22,7 +22,7 @@ jobs:
           npm run build
 
       - name: Upload FRONTEND dist/
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@4.3.4
         with:
           server: 'ftp.digital.ch1-consulting.com'
           username: 'github_admin@digital.ch1-consulting.com'
@@ -33,7 +33,7 @@ jobs:
           local-dir: spinner-game/frontend/dist/
 
       - name: Upload SPA .htaccess
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@4.3.4
         with:
           server: 'ftp.digital.ch1-consulting.com'
           username: 'github_admin@digital.ch1-consulting.com'
@@ -47,7 +47,7 @@ jobs:
             !.htaccess
 
       - name: Upload PHP API
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@4.3.4
         with:
           server: 'ftp.digital.ch1-consulting.com'
           username: 'github_admin@digital.ch1-consulting.com'
