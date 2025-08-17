@@ -21,19 +21,18 @@ jobs:
           npm ci
           npm run build
 
-      # --- FTPS UPLOADS (no SSH needed) ---
+      # Upload built SPA
       - name: Upload FRONTEND dist/ to /public_html/spinner/
         uses: SamKirkland/FTP-Deploy-Action@v4
         with:
-          server: ${{ secrets.SFTP_HOST }}      # same secret is fine
+          server: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
           password: ${{ secrets.SFTP_PASS }}
           protocol: ftps
           server-dir: /public_html/spinner/
           local-dir: spinner-game/frontend/dist/
-          # optional: wipe remote dir on each deploy
-          # dangerous-clean-slate: true
 
+      # Upload only the .htaccess for SPA routing
       - name: Upload SPA .htaccess
         uses: SamKirkland/FTP-Deploy-Action@v4
         with:
@@ -44,10 +43,11 @@ jobs:
           server-dir: /public_html/spinner/
           local-dir: spinner-game/frontend/
           exclude: |
-            **/*
+            **
             !.htaccess
 
-      - name: Upload PHP API
+      # Upload PHP API
+      - name: Upload API (PHP) to /public_html/spinner/api/
         uses: SamKirkland/FTP-Deploy-Action@v4
         with:
           server: ${{ secrets.SFTP_HOST }}
