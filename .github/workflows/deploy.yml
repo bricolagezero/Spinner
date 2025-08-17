@@ -10,14 +10,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Debug: show folder layout in runner
-      - name: Print repo tree
-        run: |
-          pwd
-          ls -la
-          ls -la spinner-game
-          ls -la spinner-game/frontend
-
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -29,30 +21,38 @@ jobs:
           npm ci
           npm run build
 
-      - name: Upload FRONTEND (dist/) to /public_html/spinner/
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      # --- FTPS UPLOADS (no SSH needed) ---
+      - name: Upload FRONTEND dist/ to /public_html/spinner/
+        uses: SamKirkland/FTP-Deploy-Action@v4
         with:
-          server: ${{ secrets.SFTP_HOST }}
+          server: ${{ secrets.SFTP_HOST }}      # same secret is fine
           username: ${{ secrets.SFTP_USER }}
           password: ${{ secrets.SFTP_PASS }}
-          port: ${{ secrets.SFTP_PORT || 22 }}
-          local_path: ./spinner-game/frontend/dist/*
-          remote_path: /public_html/spinner
+          protocol: ftps
+          server-dir: /public_html/spinner/
+          local-dir: spinner-game/frontend/dist/
+          # optional: wipe remote dir on each deploy
+          # dangerous-clean-slate: true
 
       - name: Upload SPA .htaccess
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        uses: SamKirkland/FTP-Deploy-Action@v4
         with:
           server: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
           password: ${{ secrets.SFTP_PASS }}
-          port: ${{ secrets.SFTP_PORT || 22 }}
-          local_path: ./spinner-game/frontend/.htaccess
-          remote_path: /public_html/spinner
+          protocol: ftps
+          server-dir: /public_html/spinner/
+          local-dir: spinner-game/frontend/
+          exclude: |
+            **/*
+            !.htaccess
 
-      - name: Upload API (PHP) to /public_html/spinner/api/
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      - name: Upload PHP API
+        uses: SamKirkland/FTP-Deploy-Action@v4
         with:
           server: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
           password: ${{ secrets.SFTP_PASS }}
-          port: ${{ secrets.SFTP_PORT ||_
+          protocol: ftps
+          server-dir: /public_html/spinner/api/
+          local-dir: spinner-game/api/
