@@ -23,15 +23,15 @@ jobs:
 
       - name: DNS check
         run: |
-          nslookup ftp.digital.ch1-consulting.com || true
-          ping -c 1 ftp.digital.ch1-consulting.com || true
+          nslookup digital.ch1-consulting.com || true
+          ping -c 1 digital.ch1-consulting.com || true
 
       - name: Upload FRONTEND dist/ to /public_html/spinner/
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ftp.digital.ch1-consulting.com   # or use your server IP
-          username: your-ftp-username-here
-          password: "+p0ZHMN@s^(B"                # <--- your GoDaddy FTP password
+          server: digital.ch1-consulting.com
+          username: github_admin@digital.ch1-consulting.com
+          password: "+p0ZHMN@s^(B"
           protocol: ftps
           port: 21
           server-dir: /public_html/spinner/
@@ -40,7 +40,7 @@ jobs:
       - name: Upload SPA .htaccess
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ftp://digital.ch1-consulting.com
+          server: digital.ch1-consulting.com
           username: github_admin@digital.ch1-consulting.com
           password: "+p0ZHMN@s^(B"
           protocol: ftps
@@ -54,8 +54,8 @@ jobs:
       - name: Upload PHP API
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ftp.digital.ch1-consulting.com
-          username: your-ftp-username-here
+          server: digital.ch1-consulting.com
+          username: github_admin@digital.ch1-consulting.com
           password: "+p0ZHMN@s^(B"
           protocol: ftps
           port: 21
