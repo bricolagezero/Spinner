@@ -1,0 +1,4 @@
+RewriteEngine On
+RewriteRule ^upload$ upload.php [L,QSA]
+RewriteRule ^games/?$ games.php [L,QSA]
+RewriteRule ^games/(.*)$ games.php/$1 [L,QSA]

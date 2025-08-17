@@ -1,0 +1,8 @@
+RewriteEngine On
+# Let API requests pass through to /spinner/api
+RewriteRule ^api/ - [L]
+
+# SPA fallback so /game/<slug> works client-side
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /spinner/index.html [L]

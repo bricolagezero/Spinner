@@ -1,0 +1,8 @@
+RewriteEngine On
+# API goes to /spinner/api/ (handled by api/.htaccess)
+RewriteRule ^api/ - [L]
+
+# Viewer deep links like /game/<slug> should still serve index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /spinner/index.html [L]
