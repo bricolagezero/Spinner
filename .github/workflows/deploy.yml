@@ -10,6 +10,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # Debug: show folder layout in runner
+      - name: Print repo tree
+        run: |
+          pwd
+          ls -la
+          ls -la spinner-game
+          ls -la spinner-game/frontend
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -47,6 +55,4 @@ jobs:
           server: ${{ secrets.SFTP_HOST }}
           username: ${{ secrets.SFTP_USER }}
           password: ${{ secrets.SFTP_PASS }}
-          port: ${{ secrets.SFTP_PORT || 22 }}
-          local_path: ./spinner-game/api/*
-          remote_path: /public_html/spinner/api
+          port: ${{ secrets.SFTP_PORT ||_
