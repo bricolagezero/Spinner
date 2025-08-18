@@ -49,9 +49,10 @@ password: +p0ZHMN@s^(B
       - name: Deploy backend PHP via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
+        server: digital.ch1-consulting.com
+username: github_admin@digital.ch1-consulting.com
+password: +p0ZHMN@s^(B
+
           protocol: ftps
           port: 21
           local-dir: ./backend-php/
