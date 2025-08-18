@@ -1,4 +1,12 @@
-RewriteEngine On
-RewriteRule ^upload$ upload.php [L,QSA]
-RewriteRule ^games/?$ games.php [L,QSA]
-RewriteRule ^games/(.*)$ games.php/$1 [L,QSA]
+# /spinner/api/.htaccess
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header always set Access-Control-Allow-Credentials "true"
+  Header always set Access-Control-Allow-Headers "Content-Type, X-Admin-Pass"
+  Header always set Access-Control-Allow-Methods "GET, POST, PUT, OPTIONS"
+</IfModule>
+
+<FilesMatch "\.(json)$">
+  Header set Content-Type "application/json; charset=utf-8"
+</FilesMatch>

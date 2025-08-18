@@ -13,18 +13,25 @@ type Slice = {
   outcomeImageUrl?: string; // uploaded file URL
   iconUrl?: string; // optional small icon for the slice (upload-only)
   disabled?: boolean; // used when allowRepeats = false
+  outcomeFontSize?: number;   // px
+  outcomeImageScale?: number; // 0.2 - 1.2
 };
 
 type GameSettings = {
   title: string;
   subtitle?: string;
   footer?: string;
+  // background
+  backgroundMode?: "image" | "gradient";
   backgroundUrl?: string;
+  bgGradient?: { from: string; to: string; angle: number };
+
   allowRepeats: boolean;
   timerEnabled: boolean;
   timerSeconds: number;
   slices: Slice[];
 };
+
 
 type Mode = "editor" | "viewer";
 
@@ -63,15 +70,18 @@ const makeDefaultSlices = (n: number): Slice[] =>
 // ========================================
 export default function SpinGame({ mode = "editor", apiBaseUrl = "", gameSlug }: SpinGameProps) {
   const [settings, setSettings] = useState<GameSettings>({
-    title: "Spin Challenge",
-    subtitle: "Put reps on the spot",
-    footer: "",
-    backgroundUrl: "",
-    allowRepeats: true,
-    timerEnabled: false,
-    timerSeconds: 10,
-    slices: makeDefaultSlices(8),
-  });
+  title: "Spin Challenge",
+  subtitle: "Put reps on the spot",
+  footer: "",
+  backgroundMode: "image",
+  backgroundUrl: "",
+  bgGradient: { from: "#020617", to: "#1e293b", angle: 45 },
+  allowRepeats: true,
+  timerEnabled: false,
+  timerSeconds: 10,
+  slices: makeDefaultSlices(8),
+}
+);
 
   const [activeStep, setActiveStep] = useState<number>(0);
   const [adminPassword, setAdminPassword] = useState<string>("");
@@ -142,11 +152,15 @@ export default function SpinGame({ mode = "editor", apiBaseUrl = "", gameSlug }:
     return (
       <div
         className="min-h-screen w-full flex items-center justify-center"
-        style={
-          settings.backgroundUrl
-            ? { backgroundImage: `url(${settings.backgroundUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-            : {}
-        }
+    style={
+  settings.backgroundMode === "gradient"
+    ? { backgroundImage: `linear-gradient(${settings.bgGradient?.angle ?? 45}deg, ${settings.bgGradient?.from ?? "#020617"}, ${settings.bgGradient?.to ?? "#1e293b"})`,
+        backgroundSize: "cover", backgroundPosition: "center" }
+    : (settings.backgroundUrl
+        ? { backgroundImage: `url(${settings.backgroundUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+        : {})
+}
+
       >
         <WheelPanel settings={settings} setSettings={setSettings} sleekMode={true} />
       </div>
@@ -205,18 +219,39 @@ function Basics({
   adminPassword: string;
   setAdminPassword: (s: string) => void;
 }) {
+  const [bgPct, setBgPct] = useState(0);
+  const bgMode = settings.backgroundMode ?? "image";
+  const gradient = settings.bgGradient ?? { from: "#020617", to: "#1e293b", angle: 45 };
+
+  // robust upload with progress (XHR)
   const uploadBg = async (file: File) => {
     if (!apiBaseUrl) return alert("No API base URL configured.");
+    setBgPct(0);
     const fd = new FormData();
     fd.append("file", file);
-    const res = await fetch(`${apiBaseUrl}/upload`, {
-      method: "POST",
-      headers: { "x-admin-pass": adminPassword || "" },
-      body: fd,
-    });
-    const json = await res.json();
-    if (res.ok && json?.url) setSettings({ ...settings, backgroundUrl: json.url });
-    else alert(json?.error || "Upload failed");
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${apiBaseUrl}/upload`, true);
+      xhr.setRequestHeader("x-admin-pass", adminPassword || "");
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) setBgPct(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onerror = () => reject(new Error("Network error"));
+      xhr.onload = () => {
+        try {
+          const json = JSON.parse(xhr.responseText || "{}");
+          if (xhr.status >= 200 && xhr.status < 300 && json?.url) {
+            setSettings({ ...settings, backgroundUrl: json.url, backgroundMode: "image" });
+            resolve();
+          } else {
+            reject(new Error(json?.error || `Upload failed (${xhr.status})`));
+          }
+        } catch (err: any) {
+          reject(new Error(err?.message || "Bad JSON"));
+        }
+      };
+      xhr.send(fd);
+    }).catch((e: any) => alert(e?.message || e));
   };
 
   return (
@@ -256,21 +291,82 @@ function Basics({
             onChange={(e) => setSettings({ ...settings, footer: e.target.value })}
           />
         </label>
-        <div className="md:col-span-2">
-          <span className="text-sm">Background Image (upload)</span>
-          <div className="mt-1">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => e.target.files && uploadBg(e.target.files[0])}
-            />
-            {settings.backgroundUrl && (
-              <div className="text-xs mt-1 opacity-70">Uploaded ✓</div>
-            )}
-          </div>
-        </div>
       </div>
 
+      {/* Background selector */}
+      <div className="rounded-2xl bg-white p-4 shadow space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="font-semibold">Background</div>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              checked={bgMode === "image"}
+              onChange={() => setSettings({ ...settings, backgroundMode: "image" })}
+            />
+            <span>Image</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              checked={bgMode === "gradient"}
+              onChange={() => setSettings({ ...settings, backgroundMode: "gradient" })}
+            />
+            <span>Gradient</span>
+          </label>
+        </div>
+
+        {bgMode === "image" ? (
+          <div>
+            <input type="file" accept="image/*" onChange={(e) => e.target.files && uploadBg(e.target.files[0])} />
+            {bgPct > 0 && bgPct < 100 && (
+              <div className="mt-2 h-2 w-full bg-slate-200 rounded">
+                <div className="h-2 bg-green-500 rounded" style={{ width: `${bgPct}%` }} />
+              </div>
+            )}
+            {settings.backgroundUrl && (
+              <div className="mt-2 text-xs text-green-700 flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={settings.backgroundUrl} className="h-12 rounded" alt="bg" />
+                <span>Background set ✓</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <label className="block">
+              <span className="text-sm">From</span>
+              <input
+                type="color"
+                className="w-full h-10 rounded border"
+                value={gradient.from}
+                onChange={(e) => setSettings({ ...settings, bgGradient: { ...gradient, from: e.target.value } })}
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm">To</span>
+              <input
+                type="color"
+                className="w-full h-10 rounded border"
+                value={gradient.to}
+                onChange={(e) => setSettings({ ...settings, bgGradient: { ...gradient, to: e.target.value } })}
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm">Angle</span>
+              <input
+                type="number"
+                className="w-full mt-1 px-3 py-2 rounded-xl bg-white border"
+                value={gradient.angle}
+                onChange={(e) =>
+                  setSettings({ ...settings, bgGradient: { ...gradient, angle: Number(e.target.value || 0) } })
+                }
+              />
+            </label>
+          </div>
+        )}
+      </div>
+
+      {/* repeats/timer */}
       <div className="flex flex-wrap items-center gap-4">
         <label className="flex items-center gap-2">
           <input
@@ -328,8 +424,8 @@ function Slices({
   adminPassword: string;
 }) {
   return (
-    <div className="space-y-3">
-      {settings.slices.map((s, i) => (
+   <div className="space-y-3">
+  {settings.slices.map((s, i) => (
         <SliceEditor
           key={s.id}
           slice={s}
