@@ -31,9 +31,9 @@ jobs:
       - name: Deploy frontend via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4
         with:
-                server: digital.ch1-consulting.com
-username: github_admin@digital.ch1-consulting.com
-password: +p0ZHMN@s^(B
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps
           port: 21
           local-dir: ./frontend/dist/
@@ -48,9 +48,9 @@ password: +p0ZHMN@s^(B
       - name: Deploy backend PHP via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4
         with:
-                server: digital.ch1-consulting.com
-username: github_admin@digital.ch1-consulting.com
-password: +p0ZHMN@s^(B
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps
           port: 21
           local-dir: ./backend-php/
