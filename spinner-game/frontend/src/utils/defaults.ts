@@ -1,4 +1,4 @@
-import { GameSettings, Slice } from ..types;
++ import { GameSettings, Slice } from "../types";
 
 const uid = () = Math.random().toString(36).slice(2, 9);
 const PALETTE = [#ad1a1a, #b44700, #b48a00, #2a7e4f, #2663ad, #7a2aad, #ad2564, #5a5a5a];
