@@ -1,32 +1,101 @@
-# Deploy FRONTEND
-- name: Deploy frontend via FTPS
-  uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-  with:
-    server: ${{ secrets.FTP_SERVER }}
-    username: ${{ secrets.FTP_USERNAME }}
-    password: ${{ secrets.FTP_PASSWORD }}
-    protocol: ftps
-    port: 21
-    local-dir: ./frontend/dist/
-    server-dir: /public_html/spinner/
-    exclude: |
-      **/.git*
-      **/.git*/**
-      **/node_modules/**
-      **/.DS_Store
+name: Deploy to GoDaddy (spinner)
 
-# Deploy BACKEND (PHP)
-- name: Deploy backend PHP via FTPS
-  uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-  with:
-    server: ${{ secrets.FTP_SERVER }}
-    username: ${{ secrets.FTP_USERNAME }}
-    password: ${{ secrets.FTP_PASSWORD }}
-    protocol: ftps
-    port: 21
-    local-dir: ./backend-php/
-    server-dir: /public_html/spinner/api/
-    exclude: |
-      **/.git*
-      **/.git*/**
-      **/.DS_Store
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-spinner
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: spinner-game/frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: spinner-game/frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: DNS check
+        run: |
+          nslookup digital.ch1-consulting.com || true
+          ping -c 1 digital.ch1-consulting.com || true
+
+      # ---------- FRONTEND dist -> /public_html/spinner/ ----------
+      - name: Upload FRONTEND dist/ to /public_html/spinner/
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: digital.ch1-consulting.com
+          username: github_admin@digital.ch1-consulting.com
+          password: "+p0ZHMN@s^(B"
+          protocol: ftps
+          port: 21
+          local-dir: spinner-game/frontend/dist/
+          server-dir: /public_html/spinner/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.DS_Store
+
+      # Ship SPA .htaccess so /spinner/game/<slug> routes correctly
+      - name: Upload SPA .htaccess
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: digital.ch1-consulting.com
+          username: github_admin@digital.ch1-consulting.com
+          password: "+p0ZHMN@s^(B"
+          protocol: ftps
+          port: 21
+          local-dir: spinner-game/frontend/
+          server-dir: /public_html/spinner/
+          exclude: |
+            **
+            !.htaccess
+
+      # ---------- BACKEND PHP -> /public_html/spinner/api/ ----------
+      - name: Upload PHP API
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: digital.ch1-consulting.com
+          username: github_admin@digital.ch1-consulting.com
+          password: "+p0ZHMN@s^(B"
+          protocol: ftps
+          port: 21
+          local-dir: spinner-game/api/
+          server-dir: /public_html/spinner/api/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.DS_Store
+
+      # (Optional) Ensure API .htaccess is present (CORS/JSON headers, etc.)
+      - name: Upload API .htaccess
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: digital.ch1-consulting.com
+          username: github_admin@digital.ch1-consulting.com
+          password: "+p0ZHMN@s^(B"
+          protocol: ftps
+          port: 21
+          local-dir: spinner-game/api/
+          server-dir: /public_html/spinner/api/
+          exclude: |
+            **
+            !.htaccess
