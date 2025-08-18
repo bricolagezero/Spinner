@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createGame } from "../utils/api";
-import { defaultSettings } from "../utils/defaults";
+import { createGame } from "./utils/api";
+import { defaultSettings } from "./utils/defaults";
 
 type GameListItem = { slug: string; updated_at?: string };
 
