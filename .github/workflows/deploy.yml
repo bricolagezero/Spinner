@@ -1,61 +1,32 @@
-name: Build & Deploy (Frontend + PHP backend)
+# Deploy FRONTEND
+- name: Deploy frontend via FTPS
+  uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+  with:
+    server: ${{ secrets.FTP_SERVER }}
+    username: ${{ secrets.FTP_USERNAME }}
+    password: ${{ secrets.FTP_PASSWORD }}
+    protocol: ftps
+    port: 21
+    local-dir: ./frontend/dist/
+    server-dir: /public_html/spinner/
+    exclude: |
+      **/.git*
+      **/.git*/**
+      **/node_modules/**
+      **/.DS_Store
 
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v4
-
-      # ---------- Frontend build ----------
-      - name: Use Node 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install frontend deps
-        working-directory: ./frontend
-        run: npm ci
-
-      - name: Build frontend
-        working-directory: ./frontend
-        run: npm run build
-
-      # ---------- Deploy FRONTEND (React dist -> /public_html/spinner) ----------
-      - name: Deploy frontend via FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          local-dir: ./frontend/dist/
-          server-dir: /public_html/spinner/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            **/.DS_Store
-
-      # ---------- Deploy BACKEND (PHP -> /public_html/spinner/api) ----------
-      - name: Deploy backend PHP via FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          local-dir: ./backend-php/
-          server-dir: /public_html/spinner/api/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.DS_Store
+# Deploy BACKEND (PHP)
+- name: Deploy backend PHP via FTPS
+  uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+  with:
+    server: ${{ secrets.FTP_SERVER }}
+    username: ${{ secrets.FTP_USERNAME }}
+    password: ${{ secrets.FTP_PASSWORD }}
+    protocol: ftps
+    port: 21
+    local-dir: ./backend-php/
+    server-dir: /public_html/spinner/api/
+    exclude: |
+      **/.git*
+      **/.git*/**
+      **/.DS_Store
