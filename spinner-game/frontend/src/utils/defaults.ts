@@ -1,31 +1,47 @@
+// spinner-game/frontend/src/utils/defaults.ts
 import { GameSettings, Slice } from "../types";
 
-const uid = () = Math.random().toString(36).slice(2, 9);
-const PALETTE = [#ad1a1a, #b44700, #b48a00, #2a7e4f, #2663ad, #7a2aad, #ad2564, #5a5a5a];
+const uid = () => Math.random().toString(36).slice(2, 9);
 
-function makeSlice(n number) Slice {
+const PALETTE = [
+  "#ad1a1a",
+  "#b44700",
+  "#b48a00",
+  "#2a7e4f",
+  "#2663ad",
+  "#7a2aad",
+  "#ad2564",
+  "#5a5a5a",
+];
+
+function makeSlice(n: number): Slice {
   return {
-    id uid(),
-    label `Item ${n}`,
-    color PALETTE[(n - 1) % PALETTE.length],
-    iconUrl ,
-    outcomeText ,
-    outcomeImageUrl ,
-    disabled false,
+    id: uid(),
+    label: `Item ${n}`,
+    color: PALETTE[(n - 1) % PALETTE.length],
+    iconUrl: "",
+    outcomeText: "",
+    outcomeImageUrl: "",
+    disabled: false,
   };
 }
 
-export function defaultSettings() GameSettings {
+export function defaultSettings(): GameSettings {
   const sliceCount = 6;
-  const slices = Array.from({ length sliceCount }, (_, i) = makeSlice(i + 1));
+  const slices = Array.from({ length: sliceCount }, (_, i) => makeSlice(i + 1));
+
   return {
-    title New Spin Game,
-    subtitle Add a subtitle,
-    footer CONFIDENTIAL. INTERNAL TRAINING USE ONLY.,
-    backgroundUrl ,
-    allowRepeats true,
-    timerEnabled false,
-    timerSeconds 15,
+    title: "New Spin Game",
+    subtitle: "Add a subtitle",
+    footer: "CONFIDENTIAL. INTERNAL TRAINING USE ONLY.",
+    // Background defaults (works with your viewer/editor)
+    backgroundMode: "image",
+    backgroundUrl: "",
+    bgGradient: { from: "#020617", to: "#1e293b", angle: 45 },
+
+    allowRepeats: true,
+    timerEnabled: false,
+    timerSeconds: 15,
     slices,
   };
 }
