@@ -65,6 +65,10 @@ button {
   .animate-spin-slow {
     animation: spin 3s linear infinite;
   }
+  /* slower spin for gradient borders */
+  .animate-spin-slower {
+    animation: spin 6s linear infinite;
+  }
   
   @keyframes spin {
     from {
@@ -89,6 +93,15 @@ button {
 .animate-gradient-rotate {
   animation: gradient-rotate 3s linear infinite;
   background-size: 200% 200%;
+}
+
+/* Subtle float for images/content */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-float-slow {
+  animation: float-slow 4s ease-in-out infinite;
 }
 
 /* Ensure text in wheel slices is properly rendered */

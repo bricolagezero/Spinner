@@ -57,7 +57,16 @@ export default function WheelPanel({
   const radius = Math.floor(size * 0.45);
   const cx = size / 2, cy = size / 2;
 
-  const activeSlices = useMemo(() => settings.slices.filter((s) => !s.disabled), [settings.slices]);
+  // Active slices are computed from session state, not persisted flags:
+  // - allowRepeats: all slices eligible
+  // - no repeats: exclude slices already viewed this session
+  const activeSlices = useMemo(
+    () =>
+      settings.allowRepeats
+        ? settings.slices
+        : settings.slices.filter((s) => !viewedSlices.includes(s.id)),
+    [settings.slices, settings.allowRepeats, viewedSlices]
+  );
   const sliceAngle = 360 / Math.max(1, settings.slices.length);
 
   // audio ticks
@@ -95,8 +104,9 @@ export default function WheelPanel({
   };
 
   const pickIndex = () => {
-    const candidates = settings.allowRepeats ? settings.slices : activeSlices;
-    if (candidates.length === 0) return 0;
+    // Always avoid "grayed" slices by using session-based filter
+    const candidates = activeSlices;
+    if (candidates.length === 0) return -1;
     const id = candidates[Math.floor(Math.random() * candidates.length)].id;
     return settings.slices.findIndex((s) => s.id === id);
   };
@@ -104,24 +114,29 @@ export default function WheelPanel({
   // In the spin function, ensure wheel stops with slice under triangle
   const spin = () => {
     if (spinning) return;
-    if ((!settings.allowRepeats && activeSlices.length === 0) || settings.slices.length === 0) return;
+    // Do not spin if no eligible slices remain
+    if (activeSlices.length === 0 || settings.slices.length === 0) return;
     onSpinStart?.();
 
-    // Lock denominator on first spin (no slices seen/disabled yet)
-    const seenCountNow = new Set<string>([
-      ...viewedSlices,
-      ...settings.slices.filter(s => s.disabled).map(s => s.id),
-    ]).size;
+    // Lock denominator on first spin (no slices viewed yet this session)
+    const seenCountNow = new Set<string>(viewedSlices).size;
     if (seenCountNow === 0) {
       initialTotalRef.current = settings.slices.length;
     }
 
     const idx = pickIndex();
+    if (idx < 0) return; // safety
+
+    // Angle math
     const sliceAngle = 360 / settings.slices.length;
     const sliceStartAngle = idx * sliceAngle;
     const sliceCenterAngle = sliceStartAngle + (sliceAngle / 2);
+
+    // Use current residual rotation so we always land exactly under the triangle
+    const residual = rotationResidual; // [0..360)
+    const deltaToCenter = (360 - ((sliceCenterAngle + residual) % 360)) % 360;
     const spins = 6 + Math.floor(Math.random() * 3);
-    const finalRotation = spins * 360 + (360 - sliceCenterAngle);
+    const finalRotation = spins * 360 + deltaToCenter;
 
     setSpinning(true);
     setResultIndex(idx);
@@ -182,10 +197,12 @@ export default function WheelPanel({
         const sliceId = settings.slices[resultIndex].id;
         if (!viewedSlices.includes(sliceId)) setViewedSlices(prev => [...prev, sliceId]);
       }
-      if (!settings.allowRepeats && resultIndex != null) {
-        const next = settings.slices.map((s, i) => (i === resultIndex ? { ...s, disabled: true } : s));
-        setSettings({ ...settings, slices: next });
-      }
+
+      // Remove persisted disabling. Session viewing controls eligibility.
+      // if (!settings.allowRepeats && resultIndex != null) {
+      //   const next = settings.slices.map((s, i) => (i === resultIndex ? { ...s, disabled: true } : s));
+      //   setSettings({ ...settings, slices: next });
+      // }
 
       // Confetti effect
       const root = document.createElement("div");
@@ -228,11 +245,10 @@ export default function WheelPanel({
   const current = resultIndex != null ? settings.slices[resultIndex] : null;
 
   const handleRestart = () => {
-    const resetSlices = settings.slices.map(s => ({ ...s, disabled: false }));
-    setSettings({ ...settings, slices: resetSlices });
+    // Session reset only; do not mutate slice objects
     setViewedSlices([]);
-    // Reset denominator to current slices
-    initialTotalRef.current = resetSlices.length;
+    // Reset denominator to current slices at restart
+    initialTotalRef.current = settings.slices.length;
   };
 
   // geometry
@@ -262,11 +278,11 @@ export default function WheelPanel({
     return out;
   };
 
-  // Derived: spinsLeft = initial total - unique seen (viewed or disabled)
-  const uniqueSeenCount = new Set<string>([
-    ...viewedSlices,
-    ...settings.slices.filter((s) => s.disabled).map((s) => s.id),
-  ]).size;
+  // Derived: spinsLeft = initial total - session-unique seen
+  const uniqueSeenCount = Math.min(
+    initialTotalRef.current,
+    new Set<string>(viewedSlices).size
+  );
   const spinsLeft = Math.max(0, initialTotalRef.current - uniqueSeenCount);
 
   return (
@@ -303,7 +319,8 @@ export default function WheelPanel({
           {/* Round Spin button - left side */}
           <button
             onClick={spin}
-            disabled={spinning || (!settings.allowRepeats && activeSlices.length === 0)}
+            // Disable if spinning or no active (eligible) slices left
+            disabled={spinning || activeSlices.length === 0}
             className={`absolute -left-20 top-1/2 -translate-y-1/2 w-20 h-20 md:w-24 md:h-24 rounded-full grid place-items-center
               text-black font-extrabold text-sm md:text-base shadow-[0_0_35px_rgba(255,255,0,0.6)] border-4 border-yellow-200
               transition-all duration-300 ${spinning ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-400 hover:bg-yellow-300 hover:scale-105"}`}
@@ -314,7 +331,7 @@ export default function WheelPanel({
             <div>SPIN</div>
           </button>
 
-          {/* Spins Left counter - right side (fixed denominator, unique seen counter) */}
+          {/* Spins Left counter - right side (fixed denominator, session-unique seen) */}
           <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-20 md:w-24 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md text-white text-center py-2 shadow-lg">
             <div className="text-[10px] md:text-xs opacity-80">Spins Left</div>
             <div className="text-lg md:text-xl font-bold">
@@ -402,72 +419,95 @@ export default function WheelPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative bg-white rounded-2xl p-4 md:p-6 w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh] overflow-hidden shadow-2xl"
-            >
-              <div className="w-[90%] h-[90%] mx-auto flex flex-col items-center justify-start gap-4">
-                {/* Timers */}
-                {settings.timerEnabled && countdown != null && (
-                  <div className="text-base md:text-lg font-semibold text-center text-black">
-                    Global Timer: {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
-                  </div>
-                )}
-
-                {current.timerSeconds && sliceCountdown != null && sliceCountdown > 0 && (
-                  <div className="text-base md:text-lg font-semibold text-center text-purple-600">
-                    Slice Timer: {Math.floor(sliceCountdown / 60)}:{String(sliceCountdown % 60).padStart(2, '0')}
-                  </div>
-                )}
-
-                <h2 className="text-xl md:text-2xl font-bold text-center text-black">{current.label}</h2>
-
-                {current.outcomeImageUrl && (
-                  <div className="flex-1 w-full flex items-center justify-center">
-                    <img
-                      src={current.outcomeImageUrl}
-                      className="rounded-lg shadow-lg max-w-full max-h-full object-contain"
-                      style={{ transform: `scale(${current.outcomeImageScale ?? 1})` }}
-                      alt=""
-                    />
-                  </div>
-                )}
-
-                {current.outcomeText && (
-                  <div className="w-full flex-1 flex items-center justify-center">
-                    <p className="text-center text-black w-full" style={{ fontSize: current.outcomeFontSize ?? 16 }}>
-                      {current.outcomeText}
-                    </p>
-                  </div>
-                )}
-
-                {/* Button based on spinsLeft (last slice => Close -> show completion) */}
-                {spinsLeft === 0 ? (
-                  <button
-                    onClick={() => {
-                      setShowModal(false);
-                      setShowCompletionModal(true);
-                    }}
-                    className="mt-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold shadow"
-                  >
-                    Close
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setShowModal(false);
-                      setSliceCountdown(null);
-                      spin();
-                    }}
-                    className="mt-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold shadow"
-                  >
-                    Spin Again
-                  </button>
-                )}
+            {/* Animated gradient border wrapper (5px) */}
+            <div className="relative w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh]">
+              {/* Gradient frame layer */}
+              <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
+                <div
+                  className="absolute inset-0 animate-spin-slower"
+                  style={{
+                    background:
+                      "conic-gradient(from 0deg at 50% 50%, #7c3aed, #ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6, #ec4899, #f43f5e, #7c3aed)",
+                  }}
+                />
               </div>
-            </motion.div>
+
+              {/* Content panel inset by 5px to reveal the border */}
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="absolute inset-[5px] bg-white rounded-2xl p-4 md:p-6 overflow-hidden shadow-2xl"
+              >
+                <div className="w-[90%] h-[90%] mx-auto flex flex-col items-center justify-start gap-4">
+                  {/* Timers */}
+                  {settings.timerEnabled && countdown != null && (
+                    <div className="text-base md:text-lg font-semibold text-center text-black">
+                      Global Timer: {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
+                    </div>
+                  )}
+
+                  {current.timerSeconds && sliceCountdown != null && sliceCountdown > 0 && (
+                    <div className="text-base md:text-lg font-semibold text-center text-purple-600">
+                      Slice Timer: {Math.floor(sliceCountdown / 60)}:{String(sliceCountdown % 60).padStart(2, '0')}
+                    </div>
+                  )}
+
+                  {/* Slick animated gradient title */}
+                  <motion.h2
+                    initial={{ y: -8, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1, scale: [1, 1.04, 1] }}
+                    transition={{ duration: 0.8, type: "spring", stiffness: 140 }}
+                    className="text-3xl md:text-4xl font-extrabold text-center bg-gradient-to-r from-purple-600 via-pink-500 to-amber-400 bg-clip-text text-transparent drop-shadow"
+                  >
+                    {current.label}
+                  </motion.h2>
+
+                  {current.outcomeImageUrl && (
+                    <div className="flex-1 w-full flex items-center justify-center">
+                      <img
+                        src={current.outcomeImageUrl}
+                        className="rounded-lg shadow-lg max-w-full max-h-full object-contain animate-float-slow"
+                        style={{ transform: `scale(${current.outcomeImageScale ?? 1})` }}
+                        alt=""
+                      />
+                    </div>
+                  )}
+
+                  {current.outcomeText && (
+                    <div className="w-full flex-1 flex items-center justify-center">
+                      <p className="text-center text-black w-full" style={{ fontSize: current.outcomeFontSize ?? 16 }}>
+                        {current.outcomeText}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Button based on spinsLeft (last slice => Close -> show completion) */}
+                  {spinsLeft === 0 ? (
+                    <button
+                      onClick={() => {
+                        setShowModal(false);
+                        setShowCompletionModal(true);
+                      }}
+                      className="mt-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold shadow"
+                    >
+                      Close
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setShowModal(false);
+                        setSliceCountdown(null);
+                        spin();
+                      }}
+                      className="mt-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold shadow"
+                    >
+                      Spin Again
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
