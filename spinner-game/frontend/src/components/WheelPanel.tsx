@@ -301,10 +301,12 @@ export default function WheelPanel({
   );
   const spinsLeft = Math.max(0, initialTotalRef.current - uniqueSeenCount);
 
-  // Find the page-level root to contain edge controls when in sleekMode (Viewer)
-  const viewerRoot = useMemo(() => {
-    if (typeof document === "undefined") return null;
-    return document.querySelector("[data-viewer-root]") as HTMLElement | null;
+  // Find the page-level root after mount so the portal reliably attaches
+  const [viewerRoot, setViewerRoot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const el = document.querySelector("[data-viewer-root]") as HTMLElement | null;
+    if (el) setViewerRoot(el);
   }, []);
 
   return (
