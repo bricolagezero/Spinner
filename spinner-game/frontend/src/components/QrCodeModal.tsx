@@ -67,18 +67,3 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({ isOpen, onClose, url, 
     </div>
   );
 };
-          >
-            <Download size={16} />
-            Download QR Code
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
