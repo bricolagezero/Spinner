@@ -8,18 +8,21 @@
   html {
     @apply h-full;
     font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', Inter, Arial, sans-serif;
-    overflow: hidden; /* prevent scrollbars */
+    /* was overflow: hidden; */
+    overflow: auto; /* allow page scrollbars */
   }
   
   body {
     @apply h-full m-0 bg-slate-900 text-white;
     font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', Inter, Arial, sans-serif;
-    overflow: hidden; /* prevent scrollbars */
+    /* was overflow: hidden; */
+    overflow: auto; /* allow page scrollbars */
   }
   
   #root {
     @apply h-full;
-    overflow: hidden; /* prevent scrollbars */
+    /* was overflow: hidden; */
+    overflow: auto; /* allow page scrollbars */
   }
   
   button {
@@ -111,6 +114,8 @@ button {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  /* spinner itself remains free of scrollbars */
+  /* no overflow change needed; default avoids internal scrollbars */
 }
 
 /* Ensure triangle stays on top */

@@ -41,6 +41,9 @@ export default function WheelPanel({
   const [sliceCountdown, setSliceCountdown] = useState<number | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [viewedSlices, setViewedSlices] = useState<string[]>([]);
+  // NEW: track spins taken and initial total slices for the session
+  const [spinsTaken, setSpinsTaken] = useState(0);
+  const initialTotalRef = useRef<number>(settings.slices.length);
 
   // responsive size - bigger wheel, still safe on small screens
   const [size, setSize] = useState(500);
@@ -104,6 +107,10 @@ export default function WheelPanel({
     if (spinning) return;
     if ((!settings.allowRepeats && activeSlices.length === 0) || settings.slices.length === 0) return;
     onSpinStart?.();
+    // lock initial total the first time we actually spin
+    if (spinsTaken === 0) {
+      initialTotalRef.current = settings.slices.length;
+    }
 
     const idx = pickIndex();
     const sliceAngle = 360 / settings.slices.length;
@@ -144,9 +151,16 @@ export default function WheelPanel({
 
   useEffect(() => {
     const el = wheelRef.current; if (!el) return;
-    const onEnd = async () => {
+    const onEnd = async (ev: TransitionEvent) => {
+      // Only react to the wheel's transform transition ending (ignore bubbled transitions)
       if (!spinning) return;
+      if (ev.propertyName !== "transform") return;
+      if (ev.target !== el) return;
+
       setSpinning(false);
+
+      // Count this spin as completed
+      setSpinsTaken((n) => Math.min(n + 1, initialTotalRef.current));
 
       // Inform external listeners when the wheel visually stops
       onSpinEnd?.();
@@ -216,6 +230,9 @@ export default function WheelPanel({
     const resetSlices = settings.slices.map(s => ({ ...s, disabled: false }));
     setSettings({ ...settings, slices: resetSlices });
     setViewedSlices([]);
+    // Reset counters and re-baseline total to current slices
+    setSpinsTaken(0);
+    initialTotalRef.current = resetSlices.length;
   };
 
   // geometry
@@ -245,16 +262,8 @@ export default function WheelPanel({
     return out;
   };
 
-  // Derived: how many spins remain (drives counter, last-modal button, completion)
-  // Count unique seen OR disabled to avoid early completion in both repeat and no-repeat modes.
-  const spinsLeft = Math.max(
-    0,
-    settings.slices.length -
-      new Set<string>([
-        ...viewedSlices,
-        ...settings.slices.filter((s) => s.disabled).map((s) => s.id),
-      ]).size
-  );
+  // Derived: Spins Left now simply counts down by spins taken from the initial total.
+  const spinsLeft = Math.max(0, initialTotalRef.current - spinsTaken);
 
   return (
     <div className="min-h-screen p-4 flex flex-col relative">
@@ -262,7 +271,7 @@ export default function WheelPanel({
       {settings.backgroundMode === 'image' && settings.backgroundUrl && (
         <div
           className="fixed inset-0 flex justify-center items-center pointer-events-none"
-          style={{ zIndex: 0 }}
+          style={{ zIndex: -1 }}
         >
           <img
             src={settings.backgroundUrl}
@@ -301,11 +310,11 @@ export default function WheelPanel({
             <div>SPIN</div>
           </button>
 
-          {/* Spins Left counter - right side (now uses derived spinsLeft) */}
+          {/* Spins Left counter - right side (now fixed to initial total and decrements each spin) */}
           <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-20 md:w-24 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md text-white text-center py-2 shadow-lg">
             <div className="text-[10px] md:text-xs opacity-80">Spins Left</div>
             <div className="text-lg md:text-xl font-bold">
-              {spinsLeft}/{settings.slices.length}
+              {spinsLeft}/{initialTotalRef.current}
             </div>
           </div>
 
@@ -324,7 +333,9 @@ export default function WheelPanel({
                 const labelFont = Math.max(14, Math.round(size / 22));
                 const approxCharWidth = labelFont * 0.6;
                 const charsPerLine = Math.max(6, Math.floor(arc / approxCharWidth));
-                const lines = wrapIntoLines(slice.label, charsPerLine).slice(0, 2);
+                // Allow up to 3 lines
+                const maxLines = 3;
+                const lines = wrapIntoLines(slice.label, charsPerLine).slice(0, maxLines);
                 const labelLineHeight = Math.round(labelFont * 1.12);
 
                 return (
@@ -352,7 +363,7 @@ export default function WheelPanel({
                       >
                         {i + 1}
                       </text>
-                      {/* Label - up to 2 lines, uniform font */}
+                      {/* Label - up to 3 lines, uniform font */}
                       {lines.map((line, lineIndex) => (
                         <text
                           key={lineIndex}
