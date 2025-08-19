@@ -30,5 +30,5 @@ export function uploadFile(
     xhr.send(fd);
   });
 }
-  });
-}
+  
+
