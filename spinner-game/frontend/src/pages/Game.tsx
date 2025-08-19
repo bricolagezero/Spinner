@@ -219,11 +219,12 @@ export default function EditorPage() {
                       onChange={(e) => setSettings({ ...settings, timerEnabled: e.target.checked })}
                       className="w-4 h-4 rounded"
                     />
-                    <span>Enable countdown timer</span>
+                    <span>Enable global countdown timer</span>
                   </label>
                   
                   {settings.timerEnabled && (
                     <div className="ml-7 space-y-2">
+                      <p className="text-xs text-gray-400">This timer shows for the entire session</p>
                       <div className="flex items-center gap-2">
                         <label className="text-sm">Minutes:</label>
                         <input
@@ -244,6 +245,7 @@ export default function EditorPage() {
                           max="59"
                         />
                       </div>
+                      <p className="text-xs text-gray-400 mt-2">You can also set per-slice timers in the Slices tab</p>
                     </div>
                   )}
                 </div>
