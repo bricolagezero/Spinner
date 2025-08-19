@@ -24,10 +24,14 @@ export default function WheelPanel({
   settings,
   setSettings,
   sleekMode = false,
+  onSpinStart,
+  onSpinEnd,
 }: {
   settings: GameSettings;
   setSettings: (u: any) => void;
   sleekMode?: boolean;
+  onSpinStart?: () => void;
+  onSpinEnd?: () => void;
 }) {
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -84,6 +88,10 @@ export default function WheelPanel({
   const spin = () => {
     if (spinning) return;
     if ((!settings.allowRepeats && activeSlices.length === 0) || settings.slices.length === 0) return;
+    
+    // Call onSpinStart if provided
+    onSpinStart?.();
+    
     const idx = pickIndex();
     
     // Calculate rotation so winning slice appears at top (12 o'clock position)
@@ -117,6 +125,9 @@ export default function WheelPanel({
     const onEnd = () => {
       if (!spinning) return;
       setSpinning(false);
+      
+      // Call onSpinEnd if provided
+      onSpinEnd?.();
       
       // Add 1-second delay before showing modal
       setTimeout(() => {

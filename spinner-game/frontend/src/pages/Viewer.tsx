@@ -87,14 +87,13 @@ export default function ViewerPage() {
               settings={settings} 
               setSettings={setSettings as any} 
               sleekMode={true}
-              onSpinStart={() => {
+              onSpinEnd={() => {
                 if (settings.timerEnabled) {
                   const totalSeconds = (settings.timerMinutes || 0) * 60 + (settings.timerSeconds || 0);
                   setTimeLeft(totalSeconds);
                   setTimerActive(true);
                 }
               }}
-              onSpinEnd={() => setTimerActive(false)}
             />
           </div>
           
