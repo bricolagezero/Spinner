@@ -42,6 +42,13 @@ export default function EditorPage() {
 
   async function onSave() {
     if (!settings) return;
+    
+    // Check if password is provided
+    if (!adminPassword) {
+      alert("Please enter the admin password");
+      return;
+    }
+    
     try {
       if (isNewSpinner) {
         // Create new game
@@ -55,7 +62,8 @@ export default function EditorPage() {
         nav("/admin");
       }
     } catch (e: any) {
-      alert(e.message || "Save failed");
+      console.error("Save error:", e);
+      alert(e.message || "Save failed - check if admin password is correct");
     }
   }
 

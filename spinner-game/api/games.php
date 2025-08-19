@@ -23,8 +23,17 @@ try {
   function authed() {
     global $ADMIN_PASSWORD;
     if (!empty($_SESSION['authed'])) return true;
-    $headerPass = $_SERVER['HTTP_X_ADMIN_PASS'] ?? '';
-    return is_string($headerPass) && hash_equals($ADMIN_PASSWORD, $headerPass);
+    
+    // Check various header formats (case-insensitive)
+    $headerPass = '';
+    foreach ($_SERVER as $key => $value) {
+      if (strtoupper($key) === 'HTTP_X_ADMIN_PASS') {
+        $headerPass = $value;
+        break;
+      }
+    }
+    
+    return is_string($headerPass) && $headerPass !== '' && hash_equals($ADMIN_PASSWORD, $headerPass);
   }
   function require_admin() {
     if (!authed()) json_err(401, 'Unauthorized');

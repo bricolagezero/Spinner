@@ -22,8 +22,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 header('Content-Type: application/json; charset=utf-8');
 
 // Auth: either existing session OR correct x-admin-pass header
-$headerPass = $_SERVER['HTTP_X_ADMIN_PASS'] ?? '';
-$authed = !empty($_SESSION['authed']) || (is_string($headerPass) && hash_equals($ADMIN_PASSWORD, $headerPass));
+$headerPass = '';
+foreach ($_SERVER as $key => $value) {
+  if (strtoupper($key) === 'HTTP_X_ADMIN_PASS') {
+    $headerPass = $value;
+    break;
+  }
+}
+
+$authed = !empty($_SESSION['authed']) || (is_string($headerPass) && $headerPass !== '' && hash_equals($ADMIN_PASSWORD, $headerPass));
 if (!$authed) {
   http_response_code(401);
   echo json_encode(['error' => 'Unauthorized']);

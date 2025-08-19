@@ -1,12 +1,33 @@
 # /spinner/api/.htaccess
 Options -Indexes
 
+# Enable RewriteEngine for proper header handling
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  
+  # Handle preflight OPTIONS requests
+  RewriteCond %{REQUEST_METHOD} OPTIONS
+  RewriteRule ^(.*)$ - [R=204,L]
+</IfModule>
+
 <IfModule mod_headers.c>
+  # CORS headers
+  Header always set Access-Control-Allow-Origin "*"
   Header always set Access-Control-Allow-Credentials "true"
   Header always set Access-Control-Allow-Headers "Content-Type, X-Admin-Pass"
   Header always set Access-Control-Allow-Methods "GET, POST, PUT, OPTIONS"
+  
+  # Security headers
+  Header always set X-Content-Type-Options "nosniff"
 </IfModule>
 
+# JSON content type
 <FilesMatch "\.(json)$">
   Header set Content-Type "application/json; charset=utf-8"
+</FilesMatch>
+
+# Protect sensitive files
+<FilesMatch "\.(log|ini)$">
+  Order allow,deny
+  Deny from all
 </FilesMatch>
