@@ -438,6 +438,7 @@ export default function WheelPanel({
               <button 
                 onClick={handleRestart} 
                 className="px-8 py-4 bg-white text-orange-500 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-lg"
+                style={{ fontFamily: 'Roboto, sans-serif' }}
               >
                 Restart Activity
               </button>
@@ -487,7 +488,6 @@ export default function WheelPanel({
     </div>
   );
 }
-                Great job! You've completed all the spins.
               </p>
               <button 
                 onClick={handleRestart} 
