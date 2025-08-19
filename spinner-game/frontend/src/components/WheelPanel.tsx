@@ -303,7 +303,7 @@ export default function WheelPanel({
   return (
     <div
       ref={containerRef}
-      className={`${sleekMode ? "h-full" : "min-h-screen"} p-4 flex flex-col relative`}
+      className={`${sleekMode ? "h-full w-full" : "min-h-screen w-full"} p-4 flex flex-col relative`}
     >
       {/* Background image - scoped to this panel so it shows in Viewer too */}
       {settings.backgroundMode === 'image' && settings.backgroundUrl && (
@@ -479,35 +479,50 @@ export default function WheelPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* Animated gradient border wrapper (stroke only) */}
             <div
               className="relative w-[90vw] max-w-[1200px]"
               style={{ height: "min(90vh, calc(100dvh - 32px))" }}
             >
-              {/* Gradient border ring layer (only the stroke rotates) */}
-              <div
-                className="absolute inset-0 rounded-3xl pointer-events-none animate-spin-slower"
-                style={{
-                  background:
-                    "conic-gradient(from 0deg at 50% 50%, #7c3aed, #ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6, #ec4899, #f43f5e, #7c3aed)",
-                  padding: "5px",
-                  borderRadius: "24px",
-                  WebkitMask:
-                    "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
-                  WebkitMaskComposite: "xor",
-                  maskComposite: "exclude",
-                }}
-              />
-              {/* Content panel inset by 5px to reveal the border - translucent white with blur */}
+              {/* Subtle animated border using SVG dashed gradient (no spinning rectangle) */}
+              <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="sliceModalBorderGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#7c3aed" />
+                    <stop offset="25%" stopColor="#ef4444" />
+                    <stop offset="50%" stopColor="#10b981" />
+                    <stop offset="75%" stopColor="#3b82f6" />
+                    <stop offset="100%" stopColor="#7c3aed" />
+                  </linearGradient>
+                </defs>
+                <rect
+                  x="2.5" y="2.5" width="95" height="95" rx="12" ry="12"
+                  fill="none"
+                  stroke="url(#sliceModalBorderGrad)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeDasharray="28 16"
+                >
+                  <animate attributeName="stroke-dashoffset" from="0" to="-180" dur="8s" repeatCount="indefinite" />
+                </rect>
+                <rect
+                  x="2.5" y="2.5" width="95" height="95" rx="12" ry="12"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeOpacity="0.15"
+                  strokeWidth="1"
+                />
+              </svg>
+
+              {/* Content panel inset by 5px to reveal the border */}
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 className="absolute inset-[5px] bg-white/80 backdrop-blur-md rounded-2xl p-4 md:p-6 overflow-hidden shadow-2xl"
               >
-                {/* Use full height, pin header/footer, scroll the middle */}
-                <div className="h-full w-full mx-auto flex flex-col gap-4 overflow-hidden">
-                  {/* Header: timers + title pill (pinned) */}
+                {/* Use full height, header + scrollable content (with sticky action area) */}
+                <div className="h-full w-full mx-auto flex flex-col gap-3 overflow-hidden">
+                  {/* Header: timers + title pill */}
                   <div className="shrink-0 flex flex-col items-center gap-2">
                     {settings.timerEnabled && countdown != null && (
                       <div className="text-base md:text-lg font-semibold text-center text-black">
@@ -531,8 +546,8 @@ export default function WheelPanel({
                     </motion.div>
                   </div>
 
-                  {/* Middle: scrollable content area */}
-                  <div className="flex-1 overflow-auto w-full flex flex-col items-center justify-start gap-4">
+                  {/* Middle: scrollable content + sticky action area close to content */}
+                  <div className="flex-1 overflow-auto w-full flex flex-col items-center justify-start gap-3">
                     {current.outcomeImageUrl && (
                       <div className="w-full flex items-center justify-center">
                         <img
@@ -550,32 +565,34 @@ export default function WheelPanel({
                         </p>
                       </div>
                     )}
-                  </div>
 
-                  {/* Footer: action buttons (pinned) */}
-                  <div className="shrink-0 flex items-center justify-center">
-                    {spinsLeft === 0 ? (
-                      <button
-                        onClick={() => {
-                          setShowModal(false);
-                          setShowCompletionModal(true);
-                        }}
-                        className="mt-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold shadow"
-                      >
-                        Close
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setShowModal(false);
-                          setSliceCountdown(null);
-                          spin();
-                        }}
-                        className="mt-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold shadow"
-                      >
-                        Spin Again
-                      </button>
-                    )}
+                    {/* Sticky action area: stays near content and visible; larger buttons */}
+                    <div className="sticky bottom-0 w-full pt-2 pb-1 bg-white/60 backdrop-blur-md rounded-b-xl">
+                      <div className="flex items-center justify-center">
+                        {spinsLeft === 0 ? (
+                          <button
+                            onClick={() => {
+                              setShowModal(false);
+                              setShowCompletionModal(true);
+                            }}
+                            className="px-8 py-4 text-lg md:text-xl bg-blue-500 text-white rounded-2xl hover:bg-blue-600 font-semibold shadow-xl"
+                          >
+                            Close
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setShowModal(false);
+                              setSliceCountdown(null);
+                              spin();
+                            }}
+                            className="px-8 py-4 text-lg md:text-xl bg-blue-500 text-white rounded-2xl hover:bg-blue-600 font-semibold shadow-xl"
+                          >
+                            Spin Again
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>
