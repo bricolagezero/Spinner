@@ -4,7 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
-// --- Inline global styles (we removed external index.css and Tailwind CDN) ---
+// ---- Inline global styles (no external index.css needed) ----
 const globalStyles = `
   *, *::before, *::after { box-sizing: border-box; }
   html, body, #root { height: 100%; }
@@ -20,11 +20,11 @@ const style = document.createElement("style");
 style.setAttribute("data-inline-global", "true");
 style.textContent = globalStyles;
 document.head.appendChild(style);
-// ---------------------------------------------------------------------------
+// --------------------------------------------------------------
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/spinner">
       <ErrorBoundary>
         <App />
       </ErrorBoundary>

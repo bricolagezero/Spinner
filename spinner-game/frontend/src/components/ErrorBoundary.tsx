@@ -10,7 +10,6 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Stat
   }
 
   componentDidCatch(error: unknown, info: unknown) {
-    // You can log this somewhere if you want
     console.error("ErrorBoundary caught:", error, info);
   }
 

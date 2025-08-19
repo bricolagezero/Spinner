@@ -1,101 +1,106 @@
 import React, { useEffect, useState } from "react";
-import { apiUrl, safeJson } from "../utils/api";
-import { QRCodeCanvas } from "qrcode.react";
+import { useNavigate } from "react-router-dom";
+import { createGame } from "../utils/api";
+import { defaultSettings } from "../utils/defaults";
 
-export default function Admin() {
-  const [authed, setAuthed] = useState(false);
-  const [pass, setPass] = useState("");
-  const [games, setGames] = useState<{ slug: string; updated_at?: string }[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [qrSlug, setQrSlug] = useState<string | null>(null);
+type GameListItem = { slug: string; updated_at?: string };
 
-  const login = async () => {
-    const res = await fetch(`/spinner/api/login.php`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ password: pass }),
-      credentials: "include",
-    });
-    if (res.ok) setAuthed(true);
-    else alert("Login failed");
-  };
+export default function AdminPage() {
+  const nav = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [list, setList] = useState<GameListItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const refresh = async () => {
+  async function load() {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(apiUrl("games"), { credentials: "include", headers: { Accept: "application/json" } });
-      const json = await safeJson(res);
-      if (res.ok) setGames(json.games || []);
-      else alert(json?.error || "List failed");
-    } catch (e: any) { alert(e?.message || e); }
-    finally { setLoading(false); }
-  };
+      const res = await fetch("/spinner/api/games.php?path=games", { credentials: "include" });
+      if (!res.ok) throw new Error(`List failed: ${res.status}`);
+      const data = await res.json();
+      setList(data.games ?? []);
+    } catch (e: any) {
+      setError(e.message || "Failed to load");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  useEffect(() => { if (authed) refresh(); }, [authed]);
+  useEffect(() => {
+    load();
+  }, []);
 
-  if (!authed) {
-    return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-800 to-indigo-900 p-6">
-        <div className="bg-white rounded-2xl p-6 w-full max-w-sm text-slate-900 shadow-xl">
-          <div className="text-2xl font-bold mb-2">Admin Login</div>
-          <div className="text-sm text-slate-600 mb-4">Enter your password to manage spinners.</div>
-          <input type="password" className="w-full px-3 py-2 rounded-xl border mb-3" value={pass} onChange={(e) => setPass(e.target.value)} placeholder="Password"/>
-          <button className="w-full px-4 py-2 rounded-xl bg-slate-900 text-white" onClick={login}>Enter</button>
-        </div>
-      </div>
-    );
+  async function onNewSpinner() {
+    try {
+      // If you are not using PHP sessions (login.php), pass admin password here:
+      // const slug = await createGame(defaultSettings(), "<YOUR_ADMIN_PASSWORD>");
+      const slug = await createGame(defaultSettings());
+      nav(`/admin/edit/${slug}`); // basename adds /spinner automatically
+    } catch (e: any) {
+      alert(e.message || "Failed to create spinner");
+      load();
+    }
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-start p-6 bg-gradient-to-br from-slate-800 to-indigo-900">
-      <div className="w-full max-w-5xl bg-white rounded-2xl p-6 text-slate-900 shadow-xl">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="text-2xl font-bold">Spinners</div>
-            <div className="text-sm text-slate-600">Create, edit, and share</div>
-          </div>
-          <button onClick={refresh} className="px-3 py-2 rounded-xl bg-slate-900 text-white">{loading ? "Loading…" : "Refresh"}</button>
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>Spinners</h1>
+          <div style={{ opacity: 0.7 }}>Create, edit, and share</div>
         </div>
 
-        <div className="grid gap-3">
-          {games.map((g) => (
-            <div key={g.slug} className="bg-slate-100 rounded-xl p-4 flex justify-between items-center">
-              <div>
-                <div className="font-mono text-lg">{g.slug}</div>
-                <div className="text-xs text-slate-600">Updated {g.updated_at || ""}</div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => (window.location.href = `/spinner/admin/edit/${encodeURIComponent(g.slug)}`)} className="px-3 py-2 rounded-xl bg-slate-900 text-white">Edit</button>
-                <a href={`/spinner/game/${g.slug}`} target="_blank" rel="noreferrer" className="px-3 py-2 rounded-xl bg-indigo-600 text-white">Open URL</a>
-                <button onClick={() => navigator.clipboard?.writeText(`${location.origin}/spinner/game/${g.slug}`)} className="px-3 py-2 rounded-xl bg-indigo-100 text-slate-900">Copy URL</button>
-                <button onClick={() => setQrSlug(g.slug)} className="px-3 py-2 rounded-xl bg-pink-600 text-white">QR</button>
-                <button
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(apiUrl(`games/${g.slug}/duplicate`), {
-                        method: "POST", credentials: "include", headers: { Accept: "application/json" },
-                      });
-                      const j = await safeJson(res);
-                      if (res.ok) refresh(); else alert(j?.error || "Duplicate failed");
-                    } catch (e: any) { alert(e?.message || e); }
-                  }}
-                  className="px-3 py-2 rounded-xl bg-amber-500 text-black"
-                >
-                  Duplicate
-                </button>
-              </div>
-            </div>
-          ))}
-          {games.length === 0 && <div className="text-sm text-slate-500">No spinners yet.</div>}
-        </div>
+        <button
+          onClick={onNewSpinner}
+          style={{
+            background: "linear-gradient(135deg, #2563eb, #7c3aed)",
+            color: "#fff",
+            border: "none",
+            padding: "12px 18px",
+            borderRadius: 12,
+            fontWeight: 700,
+            fontSize: 16,
+            boxShadow: "0 6px 18px rgba(0,0,0,.25)",
+          }}
+          aria-label="Create a new spinner"
+          title="Create a new spinner"
+        >
+          + New Spinner
+        </button>
+      </div>
 
-        {qrSlug && (
-          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setQrSlug(null)}>
-            <div className="bg-white rounded-2xl p-6" onClick={(e) => e.stopPropagation()}>
-              <div className="text-center mb-2">Scan to open</div>
-              <QRCodeCanvas value={`${location.origin}/spinner/game/${qrSlug}`} size={260} includeMargin />
-              <div className="mt-3 text-center text-xs">/spinner/game/{qrSlug}</div>
-            </div>
+      <div style={{ marginTop: 24 }}>
+        {loading && <div>Loading…</div>}
+        {error && <div style={{ color: "crimson" }}>{error}</div>}
+
+        {!loading && !list.length && <div style={{ opacity: 0.7 }}>No spinners yet.</div>}
+
+        {!!list.length && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+            {list.map((g) => (
+              <div
+                key={g.slug}
+                style={{
+                  borderRadius: 12,
+                  padding: 16,
+                  background: "rgba(255,255,255,.06)",
+                  border: "1px solid rgba(255,255,255,.12)",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 16 }}>{g.slug}</div>
+                <div style={{ opacity: 0.7, fontSize: 12 }}>
+                  {g.updated_at ? new Date(g.updated_at).toLocaleString() : "—"}
+                </div>
+
+                <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                  <button onClick={() => nav(`/admin/edit/${g.slug}`)}>Edit</button>
+                  <button onClick={() => window.open(`/spinner/game/${g.slug}`, "_blank")}>View URL</button>
+                  <button onClick={() => nav(`/admin/qr/${g.slug}`)}>View QR</button>
+                  <button onClick={() => nav(`/admin/duplicate/${g.slug}`)}>Duplicate</button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
