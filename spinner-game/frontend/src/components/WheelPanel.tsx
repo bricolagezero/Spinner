@@ -534,6 +534,7 @@ export default function WheelPanel({
                   className="pointer-events-none absolute inset-0"
                   viewBox="0 0 100 100"
                   preserveAspectRatio="none"
+                  style={{ overflow: "visible" }}  // ensure stroke isn’t clipped
                 >
                   <defs>
                     <linearGradient id="sliceModalBorderGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -550,6 +551,7 @@ export default function WheelPanel({
                     fill="none"
                     stroke="url(#sliceModalBorderGrad)"
                     strokeWidth="5"
+                    vectorEffect="non-scaling-stroke"
                     strokeLinecap="round"
                     strokeDasharray="18 10"
                   >
@@ -562,6 +564,7 @@ export default function WheelPanel({
                     stroke="#000"
                     strokeOpacity="0.08"
                     strokeWidth="0.5"
+                    vectorEffect="non-scaling-stroke"
                   />
                 </svg>
 
