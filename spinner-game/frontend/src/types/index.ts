@@ -1,11 +1,8 @@
 // ...existing code...
-export interface Slice {
-  id: string;
-  label: string;
-  color: string;
-  weight?: number;
-  timerSeconds?: number;
-  viewed?: boolean;
+export interface GameSettings {
+  // ...existing code...
+  backgroundMode?: 'solid' | 'gradient' | 'image';
+  backgroundImageUrl?: string;
   // ...existing code...
 }
 // ...existing code...

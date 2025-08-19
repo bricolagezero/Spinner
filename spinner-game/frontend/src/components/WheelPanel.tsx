@@ -248,11 +248,11 @@ export default function WheelPanel({
       {/* Main content wrapper */}
       <div className="flex-grow">
         {/* Background image - responsive without cutting off buttons */}
-        {settings.backgroundImage && (
+        {settings.backgroundMode === 'image' && settings.backgroundImageUrl && (
           <div className="w-full flex justify-center mb-4">
             <div className="w-full max-w-4xl" style={{ maxHeight: 'calc(100vh - 250px)' }}>
               <img 
-                src={settings.backgroundImage} 
+                src={settings.backgroundImageUrl} 
                 alt="Wheel background"
                 className="w-full h-full object-contain"
                 style={{ maxWidth: '100%', height: 'auto' }}
@@ -478,62 +478,6 @@ export default function WheelPanel({
                   handleRestart();
                 }} 
                 className="px-8 py-4 bg-white text-green-500 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-lg"
-              >
-                Finish
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-              </p>
-              <button 
-                onClick={handleRestart} 
-                className="px-8 py-4 bg-white text-orange-500 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-lg"
-                style={{ fontFamily: 'Roboto, sans-serif' }}
-              >
-                Restart Activity
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Completion Modal - All Slices Viewed */}
-      <AnimatePresence>
-        {showCompletionModal && (
-          <motion.div 
-            className="modal-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", damping: 10, stiffness: 100 }}
-              className="bg-gradient-to-br from-green-400 to-blue-500 text-white rounded-3xl p-8 md:p-12 max-w-lg text-center shadow-2xl"
-            >
-              <motion.h2 
-                className="text-4xl md:text-5xl font-bold mb-6"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-                style={{ fontFamily: 'Roboto, sans-serif' }}
-              >
-                Well Done! 🎉
-              </motion.h2>
-              <p className="text-lg md:text-xl mb-8 opacity-90" style={{ fontFamily: 'Roboto, sans-serif' }}>
-                You've viewed all the slices. Great job!
-              </p>
-              <button 
-                onClick={() => {
-                  setShowCompletionModal(false);
-                  // Reset or navigate away
-                }} 
-                className="px-8 py-4 bg-white text-green-500 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-lg"
-                style={{ fontFamily: 'Roboto, sans-serif' }}
               >
                 Finish
               </button>
