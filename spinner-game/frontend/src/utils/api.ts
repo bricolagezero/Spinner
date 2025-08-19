@@ -98,7 +98,6 @@ export async function uploadImage(file: File, adminPass?: string): Promise<strin
   });
   const data = await toJson<{ url: string }>(res);
   if (!data.url) throw new Error("Upload failed: missing url");
-  return data.url;
-}
+return data.url;
   return data.url;
 }
