@@ -326,8 +326,16 @@ export default function WheelPanel({
           style={{ width: size, height: size, filter: spinning ? "drop-shadow(0 0 30px rgba(99,102,241,0.35))" : "drop-shadow(0 10px 30px rgba(0,0,0,0.5))" }}
         >
           {/* Triangle indicator - face downward */}
-          <div className="absolute left-1/2 -translate-x-1/2 -top-12 z-40 triangle-indicator">
-            <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[40px] border-t-red-600"></div>
+          <div className="absolute left-1/2 -translate-x-1/2 -top-16 z-40 triangle-indicator">
+            <div
+              className="
+                w-0 h-0
+                border-l-[40px] border-l-transparent
+                border-r-[40px] border-r-transparent
+                border-t-[80px] border-t-red-600
+              "
+              style={{ filter: "drop-shadow(0 10px 14px rgba(0,0,0,0.6))" }}
+            />
           </div>
 
           {/* Round Spin button - left side */}

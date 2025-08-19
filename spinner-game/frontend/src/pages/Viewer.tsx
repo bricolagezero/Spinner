@@ -74,7 +74,7 @@ export default function ViewerPage() {
           </motion.div>
           
           {/* Wheel in center */}
-          <div className="flex-1 flex items-center justify-center overflow-hidden">
+          <div className="flex-1 flex items-center justify-center overflow-visible">
             <WheelPanel 
               settings={settings} 
               setSettings={setSettings as any} 
