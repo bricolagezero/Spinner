@@ -545,28 +545,44 @@ export default function WheelPanel({
                     </motion.div>
                   </div>
 
-                  {/* Middle: scrollable content + sticky action area close to content */}
-                  <div className="flex-1 overflow-auto w-full flex flex-col items-center justify-start gap-3">
+                  {/* Middle: responsive content without scrollbars */}
+                  <div className="flex-1 w-full flex flex-col items-center justify-center gap-3 overflow-hidden px-2 md:px-3">
                     {current.outcomeImageUrl && (
-                      <div className="w-full flex items-center justify-center">
+                      <div
+                        className="w-full flex items-center justify-center"
+                        style={{ maxHeight: "calc(100% - 140px)" }}
+                      >
                         <img
                           src={current.outcomeImageUrl}
-                          className="rounded-lg shadow-lg max-w-full max-h-full object-contain animate-float-slow"
-                          style={{ transform: `scale(${current.outcomeImageScale ?? 1})` }}
+                          className="rounded-lg shadow-lg object-contain animate-float-slow"
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: "100%",
+                            width: "auto",
+                            height: "auto",
+                            transform: `scale(${current.outcomeImageScale ?? 1})`,
+                          }}
                           alt=""
                         />
                       </div>
                     )}
                     {current.outcomeText && (
-                      <div className="w-full flex items-center justify-center">
-                        <p className="text-center text-black w-full" style={{ fontSize: current.outcomeFontSize ?? 16 }}>
+                      <div className="w-full flex items-center justify-center px-2">
+                        <p
+                          className="text-center text-black w-full break-words"
+                          style={{
+                            fontSize: current.outcomeFontSize ?? 16,
+                            maxHeight: 120,
+                            overflow: "hidden",
+                          }}
+                        >
                           {current.outcomeText}
                         </p>
                       </div>
                     )}
 
                     {/* Sticky action area - solid white */}
-                    <div className="sticky bottom-0 w-full pt-2 pb-1 bg-white backdrop-blur-md rounded-b-xl">
+                    <div className="sticky bottom-0 w-full pt-2 pb-1 bg-white rounded-b-xl">
                       <div className="flex items-center justify-center">
                         {spinsLeft === 0 ? (
                           <button
