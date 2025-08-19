@@ -8,6 +8,8 @@ export type Slice = {
   disabled?: boolean;
   outcomeFontSize?: number;   // px
   outcomeImageScale?: number; // 0.2–1.0
+  weight?: number;
+  timerSeconds?: number;
 };
 
 export type GameSettings = {
