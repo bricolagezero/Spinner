@@ -305,8 +305,8 @@ export default function WheelPanel({
       ref={containerRef}
       className={`${sleekMode ? "h-full w-full" : "min-h-screen w-full"} p-4 flex flex-col relative`}
     >
-      {/* Background image - scoped to this panel so it shows in Viewer too */}
-      {settings.backgroundMode === 'image' && settings.backgroundUrl && (
+      {/* Background image - only when not embedded; page-level background handled by Viewer */}
+      {!sleekMode && settings.backgroundMode === 'image' && settings.backgroundUrl && (
         <div
           className="absolute inset-0 flex justify-center items-center pointer-events-none"
           style={{ zIndex: 0 }}
@@ -353,10 +353,10 @@ export default function WheelPanel({
             <div>SPIN</div>
           </button>
 
-          {/* Spins Left counter - right side (fixed denominator, session-unique seen) */}
-          <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-20 md:w-24 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md text-white text-center py-2 shadow-lg">
-            <div className="text-[10px] md:text-xs opacity-80">Spins Left</div>
-            <div className="text-lg md:text-xl font-bold">
+          {/* Spins Left counter - right side (bigger box + larger fonts) */}
+          <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-24 md:w-28 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md text-white text-center px-2 py-3 shadow-lg">
+            <div className="text-xs md:text-sm opacity-80">Spins Left</div>
+            <div className="text-xl md:text-2xl font-bold">
               {spinsLeft}/{initialTotalRef.current}
             </div>
           </div>
@@ -470,7 +470,7 @@ export default function WheelPanel({
         </motion.div>
       </div>
 
-      {/* Slice modal - 90% viewport, content 90% inside, no scrollbars */}
+      {/* Slice modal */}
       <AnimatePresence>
         {showModal && current && (
           <motion.div
@@ -483,7 +483,7 @@ export default function WheelPanel({
               className="relative w-[90vw] max-w-[1200px]"
               style={{ height: "min(90vh, calc(100dvh - 32px))" }}
             >
-              {/* Subtle animated border using SVG dashed gradient (no spinning rectangle) */}
+              {/* Subtle animated border using SVG dashed gradient (thinner) */}
               <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="sliceModalBorderGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -498,9 +498,9 @@ export default function WheelPanel({
                   x="2.5" y="2.5" width="95" height="95" rx="12" ry="12"
                   fill="none"
                   stroke="url(#sliceModalBorderGrad)"
-                  strokeWidth="2.5"
+                  strokeWidth="1.25"
                   strokeLinecap="round"
-                  strokeDasharray="28 16"
+                  strokeDasharray="18 10"
                 >
                   <animate attributeName="stroke-dashoffset" from="0" to="-180" dur="8s" repeatCount="indefinite" />
                 </rect>
@@ -508,19 +508,18 @@ export default function WheelPanel({
                   x="2.5" y="2.5" width="95" height="95" rx="12" ry="12"
                   fill="none"
                   stroke="#ffffff"
-                  strokeOpacity="0.15"
-                  strokeWidth="1"
+                  strokeOpacity="0.12"
+                  strokeWidth="0.5"
                 />
               </svg>
 
-              {/* Content panel inset by 5px to reveal the border */}
+              {/* Content panel inset by 5px to reveal the border - solid white */}
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="absolute inset-[5px] bg-white/80 backdrop-blur-md rounded-2xl p-4 md:p-6 overflow-hidden shadow-2xl"
+                className="absolute inset-[5px] bg-white backdrop-blur-md rounded-2xl p-4 md:p-6 overflow-hidden shadow-2xl"
               >
-                {/* Use full height, header + scrollable content (with sticky action area) */}
                 <div className="h-full w-full mx-auto flex flex-col gap-3 overflow-hidden">
                   {/* Header: timers + title pill */}
                   <div className="shrink-0 flex flex-col items-center gap-2">
@@ -566,8 +565,8 @@ export default function WheelPanel({
                       </div>
                     )}
 
-                    {/* Sticky action area: stays near content and visible; larger buttons */}
-                    <div className="sticky bottom-0 w-full pt-2 pb-1 bg-white/60 backdrop-blur-md rounded-b-xl">
+                    {/* Sticky action area - solid white */}
+                    <div className="sticky bottom-0 w-full pt-2 pb-1 bg-white backdrop-blur-md rounded-b-xl">
                       <div className="flex items-center justify-center">
                         {spinsLeft === 0 ? (
                           <button

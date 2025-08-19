@@ -39,8 +39,13 @@ export default function ViewerPage() {
   if (err) return <div className="min-h-screen flex justify-center items-center text-red-500">{err}</div>;
   if (!settings) return null;
 
+  const pageBgStyle =
+    settings.backgroundMode === 'image' && settings.backgroundUrl
+      ? { backgroundImage: `url(${settings.backgroundUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+      : undefined;
+
   return (
-    <div className="min-h-screen flex bg-slate-900">
+    <div className="min-h-screen flex bg-slate-900" style={pageBgStyle}>
       <div className="flex-1 p-4 md:p-6 lg:p-8 flex relative">
         {/* Countdown Timer */}
         {settings.timerEnabled && timerActive && timeLeft !== null && (
