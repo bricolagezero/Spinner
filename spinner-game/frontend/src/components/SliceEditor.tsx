@@ -58,12 +58,12 @@ export default function SliceEditor({
           <div className="flex items-center gap-2">
             <span className="text-sm">Font size</span>
             <input type="number" className="w-24 px-2 py-1 rounded border" value={slice.outcomeFontSize ?? 20}
-                   onChange={(e) => onChange({ outcomeFontSize: Math.max(12, Math.min(72, parseInt(e.target.value || "20"))) })}/>
+                   onChange={(e) => onChange({ outcomeFontSize: Math.max(12, Math.min(72, parseInt(e.target.value || "20"))) })} />
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm">Image scale</span>
             <input type="range" min={20} max={100} value={Math.round((slice.outcomeImageScale ?? 0.6) * 100)}
-                   onChange={(e) => onChange({ outcomeImageScale: Math.max(0.2, Math.min(1, parseInt(e.target.value)/100)) })}/>
+                   onChange={(e) => onChange({ outcomeImageScale: Math.max(0.2, Math.min(1, parseInt(e.target.value)/100)) })} />
             <span className="text-xs">{Math.round((slice.outcomeImageScale ?? 0.6) * 100)}%</span>
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function SliceEditor({
           <input type="file" accept="image/*" onChange={async (e) => {
             const f = e.target.files?.[0]; if (!f) return;
             const url = await send(f, "icon"); onChange({ iconUrl: url });
-          }/>
+          }} />
           {pctIcon > 0 && <div className="h-2 w-24 bg-slate-200 rounded overflow-hidden"><div className="h-2 bg-blue-500" style={{ width: `${pctIcon}%` }} /></div>}
           {slice.iconUrl && (
             <>
@@ -102,8 +102,12 @@ export default function SliceEditor({
             <input type="file" accept="image/*" onChange={async (e) => {
               const f = e.target.files?.[0]; if (!f) return;
               const url = await send(f, "out"); onChange({ outcomeImageUrl: url });
-            }/>
-            {pctOut > 0 && <div className="h-2 w-24 bg-slate-200 rounded overflow-hidden"><div className="h-2 bg-green-500" style={{ width: `${pctOut}%` }} /></div>}
+            }} />
+            {pctOut > 0 && (
+              <div className="h-2 w-24 bg-slate-200 rounded overflow-hidden">
+                <div className="h-2 bg-green-500" style={{ width: `${pctOut}%` }} />
+              </div>
+            )}
             {slice.outcomeImageUrl && (
               <>
                 <img 
