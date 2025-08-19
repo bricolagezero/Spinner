@@ -65,14 +65,14 @@ export default function ViewerPage() {
             transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
             className="mb-4"
           >
-            <div className="inline-block rounded-2xl bg-black/50 px-4 py-3">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-1 drop-shadow-lg">{settings.title}</h1>
+            <div className="rounded-2xl bg-black/50 px-4 py-3 w-full md:w-1/2">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-1 drop-shadow-lg break-words">{settings.title}</h1>
               {settings.subtitle && (
                 <motion.p
                   initial={{ x: -50, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ duration: 0.6, delay: 0.2, type: "spring", stiffness: 100 }}
-                  className="text-base md:text-lg opacity-90 m-0"
+                  className="text-base md:text-lg opacity-90 m-0 break-words"
                 >
                   {settings.subtitle}
                 </motion.p>

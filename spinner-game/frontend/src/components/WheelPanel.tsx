@@ -483,36 +483,6 @@ export default function WheelPanel({
               className="relative w-[90vw] max-w-[1200px]"
               style={{ height: "min(90vh, calc(100dvh - 32px))" }}
             >
-              {/* Subtle animated border using SVG dashed gradient (thinner) */}
-              <svg className="absolute inset-0 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="sliceModalBorderGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#7c3aed" />
-                    <stop offset="25%" stopColor="#ef4444" />
-                    <stop offset="50%" stopColor="#10b981" />
-                    <stop offset="75%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#7c3aed" />
-                  </linearGradient>
-                </defs>
-                <rect
-                  x="2.5" y="2.5" width="95" height="95" rx="12" ry="12"
-                  fill="none"
-                  stroke="url(#sliceModalBorderGrad)"
-                  strokeWidth="1.25"
-                  strokeLinecap="round"
-                  strokeDasharray="18 10"
-                >
-                  <animate attributeName="stroke-dashoffset" from="0" to="-180" dur="8s" repeatCount="indefinite" />
-                </rect>
-                <rect
-                  x="2.5" y="2.5" width="95" height="95" rx="12" ry="12"
-                  fill="none"
-                  stroke="#ffffff"
-                  strokeOpacity="0.12"
-                  strokeWidth="0.5"
-                />
-              </svg>
-
               {/* Content panel inset by 5px to reveal the border - solid white */}
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
@@ -520,7 +490,41 @@ export default function WheelPanel({
                 exit={{ scale: 0.95, opacity: 0 }}
                 className="absolute inset-[5px] bg-white backdrop-blur-md rounded-2xl p-4 md:p-6 overflow-hidden shadow-2xl"
               >
-                <div className="h-full w-full mx-auto flex flex-col gap-3 overflow-hidden">
+                {/* Subtle animated border aligned to the panel edges */}
+                <svg
+                  className="pointer-events-none absolute inset-0"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                >
+                  <defs>
+                    <linearGradient id="sliceModalBorderGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#7c3aed" />
+                      <stop offset="25%" stopColor="#ef4444" />
+                      <stop offset="50%" stopColor="#10b981" />
+                      <stop offset="75%" stopColor="#3b82f6" />
+                      <stop offset="100%" stopColor="#7c3aed" />
+                    </linearGradient>
+                  </defs>
+                  <rect
+                    x="0.75" y="0.75" width="98.5" height="98.5" rx="12" ry="12"
+                    fill="none"
+                    stroke="url(#sliceModalBorderGrad)"
+                    strokeWidth="1.25"
+                    strokeLinecap="round"
+                    strokeDasharray="18 10"
+                  >
+                    <animate attributeName="stroke-dashoffset" from="0" to="-180" dur="8s" repeatCount="indefinite" />
+                  </rect>
+                  <rect
+                    x="0.75" y="0.75" width="98.5" height="98.5" rx="12" ry="12"
+                    fill="none"
+                    stroke="#000"
+                    strokeOpacity="0.08"
+                    strokeWidth="0.5"
+                  />
+                </svg>
+
+                <div className="h-full w-full mx-auto flex flex-col gap-3 overflow-hidden relative">
                   {/* Header: timers + title pill */}
                   <div className="shrink-0 flex flex-col items-center gap-2">
                     {settings.timerEnabled && countdown != null && (
