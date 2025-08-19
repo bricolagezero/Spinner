@@ -112,16 +112,16 @@ export default function EditorPage() {
     if (!settings?.brandColors?.length) {
       // Default palette if no brand colors
       const defaultColors = ["#e74c3c", "#e67e22", "#f39c12", "#f1c40f", "#2ecc71", "#27ae60", "#3498db", "#2980b9", "#9b59b6", "#8e44ad", "#e91e63", "#c0392b"];
-      return defaultColors[settings?.slices.length % defaultColors.length];
+      return defaultColors[(settings?.slices?.length || 0) % defaultColors.length];
     }
     
     // Get unused brand color
-    const usedColors = new Set(settings.slices.map(s => s.color));
+    const usedColors = new Set(settings.slices?.map(s => s.color) || []);
     for (const color of settings.brandColors) {
       if (!usedColors.has(color)) return color;
     }
     // If all used, cycle through
-    return settings.brandColors[settings.slices.length % settings.brandColors.length];
+    return settings.brandColors[(settings.slices?.length || 0) % settings.brandColors.length];
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
