@@ -1,8 +1,8 @@
 <?php
 // ---- config.php ----
 
-// GLOBAL ADMIN PASSWORD
-$ADMIN_PASSWORD = 'admin123';  
+// GLOBAL ADMIN PASSWORD - CHANGE THIS!
+$ADMIN_PASSWORD = 'CH1Spinner2024!';  // TODO: Change this to a secure password
 
 // Directories
 $DATA_DIR   = __DIR__ . '/data';

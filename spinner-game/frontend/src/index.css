@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom global styles */
+@layer base {
+  html {
+    @apply h-full;
+  }
+  
+  body {
+    @apply h-full m-0 bg-slate-900 text-white;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Arial, sans-serif;
+  }
+  
+  #root {
+    @apply h-full;
+  }
+  
+  button {
+    @apply cursor-pointer transition-colors;
+  }
+}
+
+/* Spinner-specific styles */
+@layer components {
+  .spinner-shadow {
+    box-shadow: 0 0 80px 10px rgba(255, 255, 255, 0.15);
+  }
+  
+  .glass-effect {
+    @apply backdrop-blur-md bg-black/25;
+  }
+  
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[9998];
+  }
+}
+
+/* Fix for gradient backgrounds */
+.bg-gradient-radial {
+  background-image: radial-gradient(circle at 30% 30%, #0b1220, transparent 60%);
+}
+
+/* Animations */
+@layer utilities {
+  .animate-spin-slow {
+    animation: spin 3s linear infinite;
+  }
+  
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}

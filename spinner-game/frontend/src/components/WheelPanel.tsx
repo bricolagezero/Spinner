@@ -171,7 +171,8 @@ export default function WheelPanel({
                     w-28 h-28 lg:w-36 lg:h-36 rounded-full grid place-items-center
                     text-black font-extrabold text-base lg:text-lg
                     shadow-[0_0_35px_rgba(255,255,0,0.7)] border-4 border-yellow-200
-                    ${spinning ? "bg-gray-300" : "bg-yellow-400 hover:bg-yellow-300"}`}
+                    transition-all duration-300
+                    ${spinning ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-400 hover:bg-yellow-300 hover:scale-105"}`}
         aria-label="Spin" title="Spin"
       >
         <div className="text-3xl lg:text-4xl">⟳</div>
@@ -188,7 +189,7 @@ export default function WheelPanel({
           borderRight: "16px solid transparent",
           borderBottom: "28px solid rgba(255,255,255,0.98)",
           filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.4))",
-          transform: "rotate(180deg)",
+          transform: "rotate(180deg) translateX(-50%)",
         }}
       />
 
@@ -196,7 +197,7 @@ export default function WheelPanel({
       <div
         ref={wheelRef}
         style={wheelStyle}
-        className="relative rounded-full overflow-hidden select-none shadow-[0_0_80px_10px_rgba(255,255,255,0.15)] bg-[radial-gradient(circle_at_30%_30%,#0b1220,transparent_60%)] ring-8 ring-white/10"
+        className="relative rounded-full overflow-hidden select-none spinner-shadow bg-gradient-radial from-slate-800 to-slate-900 ring-8 ring-white/10"
       >
         <div className="absolute inset-0 rounded-full shadow-[inset_0_0_40px_rgba(255,255,255,0.15)]" />
         <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full">
@@ -208,6 +209,7 @@ export default function WheelPanel({
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.02, type: "spring", stiffness: 140, damping: 18 }}
+              className="stroke-slate-800 stroke-1"
             />
           ))}
 
@@ -230,7 +232,7 @@ export default function WheelPanel({
                     dominantBaseline="middle"
                     fontSize={Math.max(12, Math.floor(size / 30))}
                     fill="#fff"
-                    style={isWinner ? { fontWeight: 700, filter: "drop-shadow(0 0 6px rgba(255,255,255,0.8))", transition: "transform 220ms ease-out" } : undefined}
+                    className={isWinner ? "font-bold drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] transition-transform duration-200 ease-out" : "drop-shadow-sm"}
                   >
                     {s.label}
                   </text>
@@ -239,25 +241,24 @@ export default function WheelPanel({
             );
           })}
 
-          <circle cx={cx} cy={cy} r={size * 0.04} fill="#111" />
+          <circle cx={cx} cy={cy} r={size * 0.04} fill="#111" className="drop-shadow-lg" />
           <circle cx={cx} cy={cy} r={size * 0.028} fill="#222" />
         </svg>
       </div>
 
       {/* outcome modal */}
       {showModal && current && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/80 p-4 z-[9998]">
+        <div className="modal-backdrop">
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white text-black rounded-2xl p-6 md:p-8 max-w-[80vw] max-h-[80vh] w-full flex flex-col items-center overflow-auto"
+            className="bg-white text-black rounded-2xl p-6 md:p-8 max-w-[80vw] max-h-[80vh] w-full max-w-2xl flex flex-col items-center overflow-auto shadow-2xl"
           >
             <h2 className="text-3xl font-bold mb-4 text-center">{current.label}</h2>
             {current.outcomeImageUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={current.outcomeImageUrl}
-                className="mb-4 rounded-xl"
+                className="mb-4 rounded-xl shadow-lg"
                 style={{ maxHeight: "45vh", transform: "scale(" + (current.outcomeImageScale ?? 0.6) + ")" }}
                 alt=""
               />
@@ -277,12 +278,16 @@ export default function WheelPanel({
                       cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="6"
                       strokeDasharray="289"
                       strokeDashoffset={(1 - countdown / settings.timerSeconds) * 289}
+                      className="transition-all duration-1000"
                     />
                   </svg>
                 </div>
               </div>
             )}
-            <button onClick={() => setShowModal(false)} className="mt-6 px-6 py-3 bg-pink-600 rounded-xl text-white text-lg">
+            <button 
+              onClick={() => setShowModal(false)} 
+              className="mt-6 px-6 py-3 bg-pink-600 hover:bg-pink-700 rounded-xl text-white text-lg font-semibold transition-colors shadow-lg"
+            >
               Spin Again
             </button>
           </motion.div>

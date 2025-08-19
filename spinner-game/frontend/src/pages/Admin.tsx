@@ -49,9 +49,14 @@ export default function AdminPage() {
   async function onNewSpinner() {
     try {
       const name = window.prompt("Name your spinner:", "New Spin Game") || "New Spin Game";
+      const adminPass = window.prompt("Enter admin password:") || "";
+      if (!adminPass) {
+        alert("Admin password is required");
+        return;
+      }
       const settings = defaultSettings();
       settings.title = name;
-      const slug = await createGame(settings);
+      const slug = await createGame(settings, adminPass);
       nav(`/admin/edit/${slug}`);
     } catch (e: any) {
       alert(e.message || "Failed to create spinner");
@@ -60,81 +65,83 @@ export default function AdminPage() {
   }
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>Spinners</h1>
-          <div style={{ opacity: 0.7 }}>Create, edit, and share</div>
+    <div className="min-h-screen bg-slate-900 text-white">
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="flex items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold m-0">Spinners</h1>
+            <p className="text-gray-400 mt-1">Create, edit, and share</p>
+          </div>
+
+          <button
+            onClick={onNewSpinner}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+          >
+            + New Spinner
+          </button>
         </div>
 
-        <button
-          onClick={onNewSpinner}
-          style={{
-            background: "linear-gradient(135deg, #2563eb, #7c3aed)",
-            color: "#fff",
-            border: "none",
-            padding: "12px 18px",
-            borderRadius: 12,
-            fontWeight: 700,
-            fontSize: 16,
-            boxShadow: "0 6px 18px rgba(0,0,0,.25)",
-          }}
-        >
-          + New Spinner
-        </button>
-      </div>
+        <div>
+          {loading && <div className="text-center py-8">Loading…</div>}
+          {error && <div className="text-red-500 text-center py-8">{error}</div>}
 
-      <div style={{ marginTop: 24 }}>
-        {loading && <div>Loading…</div>}
-        {error && <div style={{ color: "crimson" }}>{error}</div>}
+          {!loading && !list.length && <div className="text-gray-400 text-center py-8">No spinners yet.</div>}
 
-        {!loading && !list.length && <div style={{ opacity: 0.7 }}>No spinners yet.</div>}
+          {!!list.length && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {list.map((g) => (
+                <div
+                  key={g.slug}
+                  className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 hover:border-slate-600 transition-colors"
+                >
+                  <h3 className="font-bold text-lg mb-2">{titles[g.slug] || g.slug}</h3>
+                  <p className="text-gray-400 text-sm mb-4">
+                    {g.updated_at ? new Date(g.updated_at).toLocaleString() : "—"}
+                  </p>
 
-        {!!list.length && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
-            {list.map((g) => (
-              <div
-                key={g.slug}
-                style={{
-                  borderRadius: 12,
-                  padding: 16,
-                  background: "rgba(255,255,255,.06)",
-                  border: "1px solid rgba(255,255,255,.12)",
-                  backdropFilter: "blur(4px)",
-                }}
-              >
-                <div style={{ fontWeight: 700, fontSize: 16 }}>{titles[g.slug] || g.slug}</div>
-                <div style={{ opacity: 0.7, fontSize: 12 }}>
-                  {g.updated_at ? new Date(g.updated_at).toLocaleString() : "—"}
+                  <div className="flex gap-2 flex-wrap">
+                    <button 
+                      onClick={() => nav(`/admin/edit/${g.slug}`)}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      onClick={() => setUrlModalSlug(g.slug)}
+                      className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      View URL
+                    </button>
+                    <button 
+                      onClick={() => setQrModalSlug(g.slug)}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      View QR Code
+                    </button>
+                  </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-                <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                  <button onClick={() => nav(`/admin/edit/${g.slug}`)}>Edit</button>
-                  <button onClick={() => setUrlModalSlug(g.slug)}>View URL</button>
-                  <button onClick={() => setQrModalSlug(g.slug)}>View QR Code</button>
-                </div>
-              </div>
-            ))}
-          </div>
+        {urlModalSlug && (
+          <UrlModal
+            isOpen={true}
+            onClose={() => setUrlModalSlug(null)}
+            url={`${window.location.origin}/spinner/game/${urlModalSlug}`}
+          />
+        )}
+
+        {qrModalSlug && (
+          <QrCodeModal
+            isOpen={true}
+            onClose={() => setQrModalSlug(null)}
+            url={`${window.location.origin}/spinner/game/${qrModalSlug}`}
+            spinnerName={titles[qrModalSlug] || qrModalSlug}
+          />
         )}
       </div>
-
-      {urlModalSlug && (
-        <UrlModal
-          isOpen={true}
-          onClose={() => setUrlModalSlug(null)}
-          url={`${window.location.origin}/spinner/game/${urlModalSlug}`}
-        />
-      )}
-
-      {qrModalSlug && (
-        <QrCodeModal
-          isOpen={true}
-          onClose={() => setQrModalSlug(null)}
-          url={`${window.location.origin}/spinner/game/${qrModalSlug}`}
-          spinnerName={titles[qrModalSlug] || qrModalSlug}
-        />
-      )}
     </div>
   );
 }
