@@ -46,7 +46,8 @@ export default function WheelPanel({
   const [size, setSize] = useState(500);
   useEffect(() => {
     const onResize = () =>
-      setSize(Math.max(360, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.8)));
+      // use a slightly smaller factor to avoid clipping header/footer
+      setSize(Math.max(340, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.65)));
     onResize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -236,14 +237,18 @@ export default function WheelPanel({
   };
 
   // Derived: how many spins remain (drives counter, last-modal button, completion)
+  // Count unique seen OR disabled to avoid early completion in both repeat and no-repeat modes.
   const spinsLeft = Math.max(
     0,
     settings.slices.length -
-      (settings.allowRepeats ? viewedSlices.length : settings.slices.filter((s) => s.disabled).length)
+      new Set<string>([
+        ...viewedSlices,
+        ...settings.slices.filter((s) => s.disabled).map((s) => s.id),
+      ]).size
   );
 
   return (
-    <div className="h-screen overflow-hidden p-4 flex flex-col relative">
+    <div className="min-h-screen p-4 flex flex-col relative">
       {/* Background image - fixed behind everything, non-interactive */}
       {settings.backgroundMode === 'image' && settings.backgroundUrl && (
         <div
@@ -265,7 +270,7 @@ export default function WheelPanel({
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: spinning ? 1.03 : 1 }}
           transition={{ type: "spring", stiffness: 160, damping: 18 }}
-          className="relative mx-auto wheel-container"
+          className={`relative mx-auto wheel-container ${spinning ? "" : "wheel-breathe"}`}
           style={{ width: size, height: size, filter: spinning ? "drop-shadow(0 0 30px rgba(99,102,241,0.35))" : "drop-shadow(0 10px 30px rgba(0,0,0,0.5))" }}
         >
           {/* Triangle indicator - face downward */}
@@ -297,22 +302,20 @@ export default function WheelPanel({
 
           {/* SVG Wheel */}
           <svg width={size} height={size} className="drop-shadow-2xl">
+            {/* slice shadow filter via CSS class or fallback to plain */}
             <g ref={wheelRef} style={wheelStyle}>
               {settings.slices.map((slice, i) => {
                 const isViewed = viewedSlices.includes(slice.id);
-                // Dynamic fit for 2 lines without ellipsis
+                // Dynamic numbers; labels now uniform size across slices
                 const numberFont = Math.max(26, Math.round(size / 14));
                 const textRing = radius * 0.5;
                 const arc = 2 * Math.PI * textRing * (sliceAngle / 360) * 0.9; // padding on arc
-                let labelFont = Math.max(14, Math.round(size / 22));
-                let lines: string[] = [];
-                for (let t = 0; t < 6; t++) {
-                  const approxCharWidth = labelFont * 0.6;
-                  const charsPerLine = Math.max(6, Math.floor(arc / approxCharWidth));
-                  lines = wrapIntoLines(slice.label, charsPerLine);
-                  if (lines.length <= 2) break;
-                  labelFont = Math.max(12, labelFont - 2);
-                }
+
+                // Uniform label font (no per-slice shrinking)
+                const labelFont = Math.max(14, Math.round(size / 22));
+                const approxCharWidth = labelFont * 0.6;
+                const charsPerLine = Math.max(6, Math.floor(arc / approxCharWidth));
+                const lines = wrapIntoLines(slice.label, charsPerLine).slice(0, 2);
                 const labelLineHeight = Math.round(labelFont * 1.12);
 
                 return (
@@ -324,6 +327,8 @@ export default function WheelPanel({
                       stroke="#333"
                       strokeWidth="2"
                       opacity={1}
+                      className="slice-shadow"
+                      style={{ transition: "filter 0.3s ease, opacity 0.3s ease" }}
                     />
                     <g transform={`translate(${cx},${cy}) rotate(${i * sliceAngle + sliceAngle / 2})`}>
                       {/* Number at top */}
@@ -338,8 +343,8 @@ export default function WheelPanel({
                       >
                         {i + 1}
                       </text>
-                      {/* Label - up to 2 lines, fitted */}
-                      {lines.slice(0, 2).map((line, lineIndex) => (
+                      {/* Label - up to 2 lines, uniform font */}
+                      {lines.map((line, lineIndex) => (
                         <text
                           key={lineIndex}
                           x="0"

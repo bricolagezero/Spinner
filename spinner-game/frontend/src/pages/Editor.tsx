@@ -60,84 +60,10 @@ export default function EditorPage() {
     })();
   }, [slug, isAuthenticated]);
 
-  async function onSave() {
-    if (!settings) return;
-    
-    try {
-      if (isNewSpinner) {
-        // Create new game
-        const newSlug = await createGame(settings);
-        alert("Created successfully!");
-        nav(`/admin/edit/${newSlug}`);
-        setIsNewSpinner(false);
-      } else {
-        // Update existing game
-        await updateGame(slug!, settings);
-        alert("Saved successfully!");
-      }
-    } catch (e: any) {
-      console.error("Save error:", e);
-      alert(e.message || "Save failed");
-    }
+  // Show login modal BEFORE any loading UI to avoid stuck "Loading…"
+  if (showLogin && !isAuthenticated) {
+    return <LoginModal onLogin={handleLogin} />;
   }
-
-  const handleNameSubmit = (name: string) => {
-    if (settings) {
-      setSettings({ ...settings, title: name });
-    }
-    setShowNameModal(false);
-  };
-
-  const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    setUploading(true);
-    try {
-      const url = await uploadImage(file);
-      setSettings(prev => prev ? { ...prev, backgroundUrl: url } : null);
-    } catch (error) {
-      alert('Failed to upload background image');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleBrandedImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    setBrandedImageUploading(true);
-    try {
-      const url = await uploadImage(file);
-      const colors = await extractColorsFromImage(url);
-      setSettings(prev => prev ? { 
-        ...prev, 
-        brandedImageUrl: url,
-        brandColors: colors 
-      } : null);
-    } catch (error) {
-      alert('Failed to upload branded image');
-    } finally {
-      setBrandedImageUploading(false);
-    }
-  };
-
-  const getNextColor = () => {
-    if (!settings?.brandColors?.length) {
-      // Default palette if no brand colors
-      const defaultColors = ["#e74c3c", "#e67e22", "#f39c12", "#f1c40f", "#2ecc71", "#27ae60", "#3498db", "#2980b9", "#9b59b6", "#8e44ad", "#e91e63", "#c0392b"];
-      return defaultColors[(settings?.slices?.length || 0) % defaultColors.length];
-    }
-    
-    // Get unused brand color
-    const usedColors = new Set(settings.slices?.map(s => s.color) || []);
-    for (const color of settings.brandColors) {
-      if (!usedColors.has(color)) return color;
-    }
-    // If all used, cycle through
-    return settings.brandColors[(settings.slices?.length || 0) % settings.brandColors.length];
-  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
   if (err) return <div className="min-h-screen flex items-center justify-center text-red-500">{err}</div>;

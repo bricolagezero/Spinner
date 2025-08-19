@@ -117,3 +117,11 @@ button {
 .triangle-indicator {
   z-index: 999 !important;
 }
+
+/* Slice shadow for SVG paths */
+.slice-shadow {
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.45));
+}
+.wheel-container:hover .slice-shadow {
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.55));
+}
