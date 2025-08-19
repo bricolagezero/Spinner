@@ -121,6 +121,7 @@ export default function WheelPanel({
     transform: "rotate(" + rotation + "deg)",
     transition: spinning ? "transform 3.8s cubic-bezier(0.17,0.67,0.32,1.29)" : "none",
     transformOrigin: "center",
+    transformBox: "fill-box",
   };
 
   // normalize residual rotation [0..360)
@@ -246,9 +247,12 @@ export default function WheelPanel({
     <div className="min-h-screen bg-gray-50 p-4 flex flex-col relative">
       {/* Background image - positioned absolutely behind everything */}
       {settings.backgroundMode === 'image' && settings.backgroundUrl && (
-        <div className="absolute inset-0 flex justify-center items-center" style={{ zIndex: 0 }}>
-          <img 
-            src={settings.backgroundUrl} 
+        <div
+          className="absolute inset-0 flex justify-center items-center"
+          style={{ zIndex: 0, pointerEvents: 'none' }}
+        >
+          <img
+            src={settings.backgroundUrl}
             alt=""
             className="max-w-full max-h-full object-contain"
           />
@@ -280,9 +284,9 @@ export default function WheelPanel({
                       opacity={isViewed ? 0.5 : 1}
                     />
                     <g transform={`translate(${cx},${cy}) rotate(${i * sliceAngle + sliceAngle / 2})`}>
-                      <text 
-                        x="0" 
-                        y={-radius * 0.7} 
+                      <text
+                        x="0"
+                        y={-radius * 0.7}
                         textAnchor="middle"
                         fill="white"
                         fontSize="28"
@@ -292,10 +296,10 @@ export default function WheelPanel({
                         {i + 1}
                       </text>
                       {lines.map((line, lineIndex) => (
-                        <text 
+                        <text
                           key={lineIndex}
-                          x="0" 
-                          y={-radius * 0.45 + (lineIndex * 18)} 
+                          x="0"
+                          y={-radius * 0.45 + (lineIndex * 18)}
                           textAnchor="middle"
                           fill="white"
                           fontSize="16"
@@ -479,10 +483,6 @@ export default function WheelPanel({
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
-    </div>
-  );
-}
       </AnimatePresence>
     </div>
   );
