@@ -148,3 +148,28 @@ button {
 .slice-fill-anim {
   transition: fill 0.8s ease-in-out, filter 0.3s ease, opacity 0.3s ease;
 }
+
+/* Pulse effect that plays when a slice transitions to viewed/gray */
+@keyframes slice-pulse {
+  0% {
+    transform: scale(1);
+    stroke-width: 2;
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.45));
+  }
+  50% {
+    transform: scale(1.04);
+    stroke-width: 4;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.55));
+  }
+  100% {
+    transform: scale(1);
+    stroke-width: 2;
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.45));
+  }
+}
+.slice-pulse-on-view {
+  animation: slice-pulse 0.6s ease-in-out 1;
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform, filter, stroke-width;
+}

@@ -158,8 +158,8 @@ export default function WheelPanel({
     setResultIndex(idx);
     setCountdown(null);
 
-    // Start whoosh and keep a handle to await later
-    whooshPromiseRef.current = playWhoosh(SPIN_DURATION_MS);
+    // Start-of-spin whoosh disabled; keep click sounds only
+    whooshPromiseRef.current = Promise.resolve();
 
     // Stretch tick sounds across the entire spin duration
     const interval = Math.max(70, Math.floor(SPIN_DURATION_MS / 24));
@@ -411,7 +411,7 @@ export default function WheelPanel({
                       stroke="#333"
                       strokeWidth="2"
                       opacity={1}
-                      className="slice-shadow slice-fill-anim"
+                      className={`slice-shadow slice-fill-anim ${isViewed ? "slice-pulse-on-view" : ""}`}
                       style={{
                         fill: isViewed ? "#e5e7eb" : slice.color,
                         transition: "fill 0.8s ease-in-out, filter 0.3s ease, opacity 0.3s ease",
@@ -527,9 +527,10 @@ export default function WheelPanel({
             >
               {/* Content panel inset by 5px to reveal the border - solid white */}
               <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
+                initial={{ y: 24, scale: 0.96, opacity: 0 }}
+                animate={{ y: 0, scale: 1, opacity: 1 }}
+                exit={{ y: 10, scale: 0.98, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 220, damping: 18 }}
                 className="absolute inset-[5px] bg-white backdrop-blur-md rounded-[12%] p-4 md:p-6 overflow-hidden shadow-2xl"
               >
                 {/* Subtle animated border aligned to the panel edges */}
