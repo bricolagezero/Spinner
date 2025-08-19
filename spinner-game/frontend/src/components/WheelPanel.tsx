@@ -52,10 +52,10 @@ export default function WheelPanel({
     const compute = () => {
       if (sleekMode && containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        // Reserve space for the pointer above and side controls (Spin/Spins Left)
+        // Reserve space for the pointer above; controls are fixed to viewport now (minimal side outset)
         const topOutset = 60;      // triangle pointer
         const bottomOutset = 16;   // small padding
-        const sideOutset = 96;     // each side ~80-96px for controls
+        const sideOutset = 24;     // reduced since controls are fixed at window edges
         const availW = Math.max(200, rect.width - sideOutset * 2);
         const availH = Math.max(200, rect.height - topOutset - bottomOutset);
         const s = Math.min(availW, availH);
@@ -338,25 +338,29 @@ export default function WheelPanel({
             />
           </div>
 
-          {/* Round Spin button - left side */}
+          {/* Round Spin button - fixed at left edge, 30px inset, 2x size */}
           <button
             onClick={spin}
             // Disable if spinning or no active (eligible) slices left
             disabled={spinning || activeSlices.length === 0}
-            className={`absolute -left-20 top-1/2 -translate-y-1/2 w-20 h-20 md:w-24 md:h-24 rounded-full grid place-items-center
-              text-black font-extrabold text-sm md:text-base shadow-[0_0_35px_rgba(255,255,0,0.6)] border-4 border-yellow-200
+            className={`fixed left-[30px] top-1/2 -translate-y-1/2 w-40 h-40 md:w-48 md:h-48 rounded-full grid place-items-center
+              text-black font-extrabold text-base md:text-lg shadow-[0_0_45px_rgba(255,255,0,0.7)] border-8 border-yellow-200
               transition-all duration-300 ${spinning ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-400 hover:bg-yellow-300 hover:scale-105"}`}
+            style={{ zIndex: 10 }}
             aria-label="Spin"
             title="Spin"
           >
-            <div className="text-2xl md:text-3xl">⟳</div>
-            <div>SPIN</div>
+            <div className="text-4xl md:text-5xl leading-none">⟳</div>
+            <div className="mt-1 text-lg md:text-xl">SPIN</div>
           </button>
 
-          {/* Spins Left counter - right side (bigger box + larger fonts) */}
-          <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-24 md:w-28 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md text-white text-center px-2 py-3 shadow-lg">
-            <div className="text-xs md:text-sm opacity-80">Spins Left</div>
-            <div className="text-xl md:text-2xl font-bold">
+          {/* Spins Left counter - fixed at right edge, 30px inset, 2x size */}
+          <div
+            className="fixed right-[30px] top-1/2 -translate-y-1/2 w-48 md:w-56 rounded-2xl bg-white/10 border-2 border-white/30 backdrop-blur-md text-white text-center px-3 py-4 shadow-xl"
+            style={{ zIndex: 10 }}
+          >
+            <div className="text-sm md:text-base opacity-90">Spins Left</div>
+            <div className="text-2xl md:text-3xl font-extrabold">
               {spinsLeft}/{initialTotalRef.current}
             </div>
           </div>
@@ -367,28 +371,28 @@ export default function WheelPanel({
             <g ref={wheelRef} style={wheelStyle}>
               {settings.slices.map((slice, i) => {
                 const isViewed = viewedSlices.includes(slice.id);
-                // Dynamic numbers; labels now uniform size across slices
-                const numberFont = Math.max(26, Math.round(size / 14));
+                // Smaller per-slice circle; number font derived from circle size
                 const textRing = radius * 0.5;
-                const arc = 2 * Math.PI * textRing * (sliceAngle / 360) * 0.9; // padding on arc
+                const arc = 2 * Math.PI * textRing * (sliceAngle / 360) * 0.9;
 
-                // Uniform label font (no per-slice shrinking)
+                // Labels (unchanged)
                 const labelFont = Math.max(14, Math.round(size / 22));
                 const approxCharWidth = labelFont * 0.6;
                 const charsPerLine = Math.max(6, Math.floor(arc / approxCharWidth));
-                // Allow up to 3 lines
                 const maxLines = 3;
                 const lines = wrapIntoLines(slice.label, charsPerLine).slice(0, maxLines);
                 const labelLineHeight = Math.round(labelFont * 1.12);
 
-                // NEW: circle at the top edge of the slice (for number or icon)
-                const baseDiameter = Math.min(100, Math.max(60, Math.round(size * 0.18)));
-                const circleDiameter = Math.max(40, baseDiameter - 20); // 20px smaller
+                // Make the circle smaller
+                const baseDiameter = Math.min(84, Math.max(40, Math.round(size * 0.12)));
+                const circleDiameter = Math.max(32, baseDiameter - 24);
                 const circleRadius = circleDiameter / 2;
-                // Place the circle so its center sits exactly on the outer edge (half in, half out)
                 const circleCY = -radius;
-                // Labels start ~50px below the circle's bottom edge (inside the wheel)
-                const labelStartY = circleCY + circleRadius + 50;
+                // tighter spacing beneath smaller circle
+                const labelStartY = circleCY + circleRadius + 36;
+
+                // Number font fits inside smaller circle
+                const numberFont = Math.max(18, Math.floor(circleDiameter * 0.55));
 
                 const clipId = `sliceIconClip-${slice.id}`;
 
