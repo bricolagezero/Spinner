@@ -243,23 +243,20 @@ export default function WheelPanel({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 flex flex-col">
-      {/* Main content wrapper */}
-      <div className="flex-grow">
-        {/* Background image - responsive without cutting off buttons */}
-        {settings.backgroundMode === 'image' && settings.backgroundUrl && (
-          <div className="w-full flex justify-center mb-4">
-            <div className="w-full max-w-4xl" style={{ maxHeight: 'calc(100vh - 250px)' }}>
-              <img 
-                src={settings.backgroundUrl} 
-                alt="Wheel background"
-                className="w-full h-full object-contain"
-                style={{ maxWidth: '100%', height: 'auto' }}
-              />
-            </div>
-          </div>
-        )}
+    <div className="min-h-screen bg-gray-50 p-4 flex flex-col relative">
+      {/* Background image - positioned absolutely behind everything */}
+      {settings.backgroundMode === 'image' && settings.backgroundUrl && (
+        <div className="absolute inset-0 flex justify-center items-center" style={{ zIndex: 0 }}>
+          <img 
+            src={settings.backgroundUrl} 
+            alt=""
+            className="max-w-full max-h-full object-contain"
+          />
+        </div>
+      )}
 
+      {/* Main content wrapper - positioned above background */}
+      <div className="flex-grow relative" style={{ zIndex: 1 }}>
         {/* Wheel container */}
         <div className="relative mx-auto" style={{ width: size, height: size }}>
           {/* Triangle indicator - higher z-index */}
@@ -272,6 +269,7 @@ export default function WheelPanel({
             <g ref={wheelRef} style={wheelStyle}>
               {settings.slices.map((slice, i) => {
                 const isViewed = viewedSlices.includes(slice.id);
+                const lines = wrapText(slice.label, radius * 0.8);
                 return (
                   <g key={slice.id}>
                     <path 
@@ -287,23 +285,26 @@ export default function WheelPanel({
                         y={-radius * 0.7} 
                         textAnchor="middle"
                         fill="white"
-                        fontSize="24"
+                        fontSize="28"
                         fontWeight="bold"
                         className="drop-shadow-lg wheel-slice-text"
                       >
                         {i + 1}
                       </text>
-                      <text 
-                        x="0" 
-                        y={-radius * 0.5} 
-                        textAnchor="middle"
-                        fill="white"
-                        fontSize="14"
-                        fontWeight="500"
-                        className="drop-shadow wheel-slice-text"
-                      >
-                        {slice.label}
-                      </text>
+                      {lines.map((line, lineIndex) => (
+                        <text 
+                          key={lineIndex}
+                          x="0" 
+                          y={-radius * 0.45 + (lineIndex * 18)} 
+                          textAnchor="middle"
+                          fill="white"
+                          fontSize="16"
+                          fontWeight="600"
+                          className="drop-shadow wheel-slice-text"
+                        >
+                          {line}
+                        </text>
+                      ))}
                     </g>
                   </g>
                 );
@@ -325,11 +326,6 @@ export default function WheelPanel({
           </button>
         </div>
       </div>
-
-      {/* Footer - centered at bottom */}
-      <footer className="mt-8 py-4 text-center text-sm text-gray-600">
-        <p>&copy; 2024 Spinner Game. All rights reserved.</p>
-      </footer>
 
       {/* Slice modal */}
       <AnimatePresence>
@@ -483,6 +479,10 @@ export default function WheelPanel({
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+    </div>
+  );
+}
       </AnimatePresence>
     </div>
   );
