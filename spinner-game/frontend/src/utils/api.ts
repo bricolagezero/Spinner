@@ -100,4 +100,3 @@ export async function uploadImage(file: File, adminPass?: string): Promise<strin
   if (!data.url) throw new Error("Upload failed: missing url");
   return data.url;
 }
-}

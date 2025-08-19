@@ -143,7 +143,6 @@ export default function WheelPanel({
         if (settings.timerEnabled) {
           const totalSeconds = (settings.timerMinutes || 0) * 60 + (settings.timerSeconds || 0);
           setCountdown(totalSeconds);
-        }
         // Set per-slice timer if available
         if (resultIndex != null && settings.slices[resultIndex].timerSeconds) {
           setSliceCountdown(settings.slices[resultIndex].timerSeconds);
@@ -464,26 +463,6 @@ export default function WheelPanel({
               >
                 Activity Complete! 🎉
               </motion.h2>
-              <p className="text-lg md:text-xl mb-8 opacity-90">
-                Congratulations! You've viewed all slices.
-              </p>
-              <button 
-                onClick={() => {
-                  setShowCompletionModal(false);
-                  handleRestart();
-                }} 
-                className="px-8 py-4 bg-white text-green-500 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-lg"
-              >
-                Finish
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-}
               <p className="text-lg md:text-xl mb-8 opacity-90">
                 Congratulations! You've viewed all slices.
               </p>
