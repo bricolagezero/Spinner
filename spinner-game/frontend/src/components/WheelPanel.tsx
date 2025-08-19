@@ -338,29 +338,36 @@ export default function WheelPanel({
             />
           </div>
 
-          {/* Round Spin button - fixed at left edge, 30px inset, 2x size */}
+          {/* Spin button: edge-pinned and 2x size in sleekMode; original placement otherwise */}
           <button
             onClick={spin}
-            // Disable if spinning or no active (eligible) slices left
             disabled={spinning || activeSlices.length === 0}
-            className={`fixed left-[30px] top-1/2 -translate-y-1/2 w-40 h-40 md:w-48 md:h-48 rounded-full grid place-items-center
-              text-black font-extrabold text-base md:text-lg shadow-[0_0_45px_rgba(255,255,0,0.7)] border-8 border-yellow-200
-              transition-all duration-300 ${spinning ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-400 hover:bg-yellow-300 hover:scale-105"}`}
-            style={{ zIndex: 10 }}
+            className={`${
+              sleekMode
+                ? "fixed left-[30px] top-1/2 -translate-y-1/2 w-40 h-40 md:w-48 md:h-48 border-8"
+                : "absolute -left-20 top-1/2 -translate-y-1/2 w-20 h-20 md:w-24 md:h-24 border-4"
+            } rounded-full grid place-items-center text-black font-extrabold
+            shadow-[0_0_45px_rgba(255,255,0,0.7)] transition-all duration-300
+            ${spinning ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-400 hover:bg-yellow-300 hover:scale-105"}`}
+            style={{ zIndex: sleekMode ? 10 : undefined }}
             aria-label="Spin"
             title="Spin"
           >
-            <div className="text-4xl md:text-5xl leading-none">⟳</div>
-            <div className="mt-1 text-lg md:text-xl">SPIN</div>
+            <div className={`${sleekMode ? "text-4xl md:text-5xl" : "text-2xl md:text-3xl"} leading-none`}>⟳</div>
+            <div className={`${sleekMode ? "mt-1 text-lg md:text-xl" : ""}`}>SPIN</div>
           </button>
 
-          {/* Spins Left counter - fixed at right edge, 30px inset, 2x size */}
+          {/* Spins Left counter: edge-pinned and larger in sleekMode; original placement otherwise */}
           <div
-            className="fixed right-[30px] top-1/2 -translate-y-1/2 w-48 md:w-56 rounded-2xl bg-white/10 border-2 border-white/30 backdrop-blur-md text-white text-center px-3 py-4 shadow-xl"
-            style={{ zIndex: 10 }}
+            className={`${
+              sleekMode
+                ? "fixed right-[30px] top-1/2 -translate-y-1/2 w-48 md:w-56 px-3 py-4 border-2"
+                : "absolute -right-20 top-1/2 -translate-y-1/2 w-24 md:w-28 px-2 py-3 border"
+            } rounded-2xl bg-white/10 border-white/30 backdrop-blur-md text-white text-center shadow-xl`}
+            style={{ zIndex: sleekMode ? 10 : undefined }}
           >
-            <div className="text-sm md:text-base opacity-90">Spins Left</div>
-            <div className="text-2xl md:text-3xl font-extrabold">
+            <div className={`${sleekMode ? "text-sm md:text-base" : "text-xs md:text-sm"} opacity-90`}>Spins Left</div>
+            <div className={`${sleekMode ? "text-2xl md:text-3xl" : "text-xl md:text-2xl"} font-extrabold`}>
               {spinsLeft}/{initialTotalRef.current}
             </div>
           </div>
