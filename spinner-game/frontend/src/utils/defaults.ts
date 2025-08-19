@@ -31,7 +31,7 @@ export function defaultSettings(): GameSettings {
   const slices = Array.from({ length: sliceCount }, (_, i) => makeSlice(i + 1));
 
   return {
-    title: "New Spin Game",
+    title: customTitle?.trim() || "New Spin Game",
     subtitle: "Add a subtitle",
     footer: "CONFIDENTIAL. INTERNAL TRAINING USE ONLY.",
     // Background defaults (works with your viewer/editor)

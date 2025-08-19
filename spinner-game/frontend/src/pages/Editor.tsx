@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getGame, updateGame } from "../utils/api";
+import WheelPanel from "../components/WheelPanel";
 
 export default function EditorPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -54,6 +55,10 @@ export default function EditorPage() {
                 style={{ padding: 8, borderRadius: 6, border: "1px solid #444", width: 320 }}
               />
             </label>
+          </div>
+
+          <div style={{marginTop:24}}>
+            <WheelPanel settings={settings} setSettings={setSettings as any} />
           </div>
 
           <button onClick={onSave} style={{ padding: "10px 16px", borderRadius: 10 }}>
