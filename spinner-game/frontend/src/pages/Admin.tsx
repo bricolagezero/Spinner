@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { QRCodeCanvas } from "qrcode.react";
-import { createGame } from "../utils/api";
+import { createGame, getGame } from "../utils/api";
 import { defaultSettings } from "../utils/defaults";
+import { UrlModal } from "../components/UrlModal";
+import { QrCodeModal } from "../components/QrCodeModal";
 
 type GameListItem = { slug: string; updated_at?: string };
 
@@ -24,18 +25,16 @@ export default function AdminPage() {
       const data = await res.json();
       const games = data.games ?? [];
       setList(games);
+      
       // Fetch titles for display
-      (async () => {
-        const entries: Record<string, string> = {};
-        for (const g of games) {
-          try {
-            const r = await fetch(`/spinner/api/game.php?path=games&slug=${titles[g.slug] ?? g.slug}`, { credentials: "include" });
-            const j = await r.json();
-            entries[g.slug] = j?.settings?.title || g.slug;
-          } catch {}
-        }
-        setTitles(entries);
-      })();
+      const entries: Record<string, string> = {};
+      for (const g of games) {
+        try {
+          const gameData = await getGame(g.slug);
+          entries[g.slug] = gameData?.settings?.title || g.slug;
+        } catch {}
+      }
+      setTitles(entries);
     } catch (e: any) {
       setError(e.message || "Failed to load");
     } finally {
@@ -49,11 +48,11 @@ export default function AdminPage() {
 
   async function onNewSpinner() {
     try {
-      // If you are not using PHP sessions (login.php), pass admin password here:
-      // const slug = await createGame(defaultSettings(), "<YOUR_ADMIN_PASSWORD>");
       const name = window.prompt("Name your spinner:", "New Spin Game") || "New Spin Game";
-      const slug = await createGame(defaultSettings(name));
-      nav(`/admin/edit/${slug}`); // basename adds /spinner automatically
+      const settings = defaultSettings();
+      settings.title = name;
+      const slug = await createGame(settings);
+      nav(`/admin/edit/${slug}`);
     } catch (e: any) {
       alert(e.message || "Failed to create spinner");
       load();
@@ -80,8 +79,6 @@ export default function AdminPage() {
             fontSize: 16,
             boxShadow: "0 6px 18px rgba(0,0,0,.25)",
           }}
-          aria-label="Create a new spinner"
-          title="Create a new spinner"
         >
           + New Spinner
         </button>
@@ -97,7 +94,7 @@ export default function AdminPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
             {list.map((g) => (
               <div
-                key={titles[g.slug] ?? g.slug}
+                key={g.slug}
                 style={{
                   borderRadius: 12,
                   padding: 16,
@@ -106,22 +103,38 @@ export default function AdminPage() {
                   backdropFilter: "blur(4px)",
                 }}
               >
-                <div style={{ fontWeight: 700, fontSize: 16 }}>{titles[g.slug] ?? g.slug}</div>
+                <div style={{ fontWeight: 700, fontSize: 16 }}>{titles[g.slug] || g.slug}</div>
                 <div style={{ opacity: 0.7, fontSize: 12 }}>
                   {g.updated_at ? new Date(g.updated_at).toLocaleString() : "—"}
                 </div>
 
                 <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                  <button onClick={() => nav(`/admin/edit/${titles[g.slug] ?? g.slug}`)}>Edit</button>
-                  <button onClick={() => window.open(`/spinner/game/${titles[g.slug] ?? g.slug}`, "_blank")}>View URL</button>
-                  <button onClick={() => nav(`/admin/qr/${titles[g.slug] ?? g.slug}`)}>View QR</button>
-                  <button onClick={() => nav(`/admin/duplicate/${titles[g.slug] ?? g.slug}`)}>Duplicate</button>
+                  <button onClick={() => nav(`/admin/edit/${g.slug}`)}>Edit</button>
+                  <button onClick={() => setUrlModalSlug(g.slug)}>View URL</button>
+                  <button onClick={() => setQrModalSlug(g.slug)}>View QR Code</button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {urlModalSlug && (
+        <UrlModal
+          isOpen={true}
+          onClose={() => setUrlModalSlug(null)}
+          url={`${window.location.origin}/spinner/game/${urlModalSlug}`}
+        />
+      )}
+
+      {qrModalSlug && (
+        <QrCodeModal
+          isOpen={true}
+          onClose={() => setQrModalSlug(null)}
+          url={`${window.location.origin}/spinner/game/${qrModalSlug}`}
+          spinnerName={titles[qrModalSlug] || qrModalSlug}
+        />
+      )}
     </div>
   );
 }

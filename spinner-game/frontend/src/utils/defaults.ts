@@ -26,7 +26,7 @@ function makeSlice(n: number): Slice {
   };
 }
 
-export function defaultSettings(): GameSettings {
+export function defaultSettings(customTitle?: string): GameSettings {
   const sliceCount = 6;
   const slices = Array.from({ length: sliceCount }, (_, i) => makeSlice(i + 1));
 
