@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { GameSettings } from "../types";
 
 // small helpers
@@ -34,6 +34,7 @@ export default function WheelPanel({
   const [resultIndex, setResultIndex] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [showCompletion, setShowCompletion] = useState(false);
 
   // responsive size - make it smaller
   const [size, setSize] = useState(500);
@@ -152,6 +153,19 @@ export default function WheelPanel({
 
   const current = resultIndex != null ? settings.slices[resultIndex] : null;
 
+  // Check if all slices are disabled (activity complete)
+  useEffect(() => {
+    if (!settings.allowRepeats && settings.slices.length > 0 && settings.slices.every(s => s.disabled)) {
+      setShowCompletion(true);
+    }
+  }, [settings.slices, settings.allowRepeats]);
+
+  const handleRestart = () => {
+    const resetSlices = settings.slices.map(s => ({ ...s, disabled: false }));
+    setSettings({ ...settings, slices: resetSlices });
+    setShowCompletion(false);
+  };
+
   // geometry
   const slicePath = (index: number) => {
     const a0 = (index * sliceAngle * Math.PI) / 180;
@@ -236,13 +250,21 @@ export default function WheelPanel({
             />
           ))}
 
-          {/* labels with text wrapping */}
+          {/* icons and labels */}
           {settings.slices.map((s, i) => {
             const angle = i * sliceAngle + sliceAngle / 2;
-            const rL = radius * 0.65;
             const rad = (angle * Math.PI) / 180;
-            const rx = cx + rL * Math.sin(rad);
-            const ry = cy - rL * Math.cos(rad);
+            
+            // Icon positioning (closer to center)
+            const iconRadius = radius * 0.45;
+            const iconX = cx + iconRadius * Math.sin(rad);
+            const iconY = cy - iconRadius * Math.cos(rad);
+            
+            // Text positioning (further out)
+            const textRadius = radius * 0.7;
+            const textX = cx + textRadius * Math.sin(rad);
+            const textY = cy - textRadius * Math.cos(rad);
+            
             const isWinner = resultIndex === i && !spinning;
             const counter = isWinner ? -rotationResidual : 0;
             
@@ -251,21 +273,37 @@ export default function WheelPanel({
             
             return (
               <motion.g 
-                key={`${s.id}-label`}
+                key={`${s.id}-content`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 + i * 0.05 }}
               >
-                <g transform={`translate(${rx},${ry}) rotate(${counter}) translate(${-rx},${-ry})`}>
+                {/* Icon */}
+                {s.iconUrl && (
+                  <g transform={`translate(${iconX},${iconY}) rotate(${counter}) translate(${-iconX},${-iconY})`}>
+                    <image
+                      href={s.iconUrl}
+                      x={iconX - 20}
+                      y={iconY - 20}
+                      width="40"
+                      height="40"
+                      preserveAspectRatio="xMidYMid meet"
+                    />
+                  </g>
+                )}
+                
+                {/* Label */}
+                <g transform={`translate(${textX},${textY}) rotate(${counter}) translate(${-textX},${-textY})`}>
                   {lines.map((line, lineIndex) => (
                     <text
                       key={lineIndex}
-                      x={rx}
-                      y={ry + (lineIndex - (lines.length - 1) / 2) * fontSize * 1.2}
+                      x={textX}
+                      y={textY + (lineIndex - (lines.length - 1) / 2) * fontSize * 1.2}
                       textAnchor="middle"
                       dominantBaseline="middle"
                       fontSize={fontSize}
                       fill="#fff"
+                      style={{ fontFamily: 'Roboto, sans-serif' }}
                       className={isWinner ? "font-bold drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] transition-transform duration-200 ease-out" : "drop-shadow-sm"}
                     >
                       {line}
@@ -281,53 +319,110 @@ export default function WheelPanel({
         </svg>
       </div>
 
-      {/* outcome modal */}
-      {showModal && current && (
-        <div className="modal-backdrop">
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white text-black rounded-2xl p-6 md:p-8 max-w-[80vw] max-h-[80vh] w-full max-w-2xl flex flex-col items-center overflow-auto shadow-2xl"
+      {/* outcome modal with animated border */}
+      <AnimatePresence>
+        {showModal && current && (
+          <motion.div 
+            className="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
-            <h2 className="text-3xl font-bold mb-4 text-center">{current.label}</h2>
-            {current.outcomeImageUrl && (
-              <img
-                src={current.outcomeImageUrl}
-                className="mb-4 rounded-xl shadow-lg"
-                style={{ maxHeight: "45vh", transform: "scale(" + (current.outcomeImageScale ?? 0.6) + ")" }}
-                alt=""
-              />
-            )}
-            {current.outcomeText && (
-              <p className="mb-4 text-center" style={{ fontSize: current.outcomeFontSize ?? 20 }}>
-                {current.outcomeText}
-              </p>
-            )}
-            {settings.timerEnabled && countdown != null && (
-              <div className="relative mt-2">
-                <div className="relative w-24 h-24 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-3xl font-bold text-pink-600 shadow-[0_0_30px_rgba(255,255,255,0.2)] animate-pulse">
-                  {countdown}
-                  <svg className="absolute inset-0" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth="6" />
-                    <circle
-                      cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="6"
-                      strokeDasharray="289"
-                      strokeDashoffset={(1 - countdown / settings.timerSeconds) * 289}
-                      className="transition-all duration-1000"
-                    />
-                  </svg>
-                </div>
-              </div>
-            )}
-            <button 
-              onClick={() => setShowModal(false)} 
-              className="mt-6 px-6 py-3 bg-pink-600 hover:bg-pink-700 rounded-xl text-white text-lg font-semibold transition-colors shadow-lg"
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, rotate: -10 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", damping: 15, stiffness: 200 }}
+              className="relative"
             >
-              Spin Again
-            </button>
+              {/* Animated gradient border */}
+              <div className="absolute inset-0 rounded-2xl p-1 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-gradient-rotate" />
+              </div>
+              
+              {/* Content */}
+              <div className="relative bg-white text-black rounded-2xl p-6 md:p-8 max-w-[80vw] max-h-[80vh] w-full max-w-2xl flex flex-col items-center overflow-auto shadow-2xl">
+                <h2 className="text-3xl font-bold mb-4 text-center" style={{ fontFamily: 'Roboto, sans-serif' }}>{current.label}</h2>
+                {current.outcomeImageUrl && (
+                  <img
+                    src={current.outcomeImageUrl}
+                    className="mb-4 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform"
+                    style={{ maxHeight: "45vh", transform: "scale(" + (current.outcomeImageScale ?? 0.6) + ")" }}
+                    alt=""
+                    onClick={() => window.open(current.outcomeImageUrl, '_blank')}
+                  />
+                )}
+                {current.outcomeText && (
+                  <p className="mb-4 text-center" style={{ fontSize: current.outcomeFontSize ?? 20, fontFamily: 'Roboto, sans-serif' }}>
+                    {current.outcomeText}
+                  </p>
+                )}
+                {settings.timerEnabled && countdown != null && (
+                  <div className="relative mt-2">
+                    <div className="relative w-24 h-24 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-3xl font-bold text-white shadow-[0_0_30px_rgba(255,255,255,0.2)] animate-pulse">
+                      {countdown}
+                      <svg className="absolute inset-0" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="6" />
+                        <circle
+                          cx="50" cy="50" r="46" fill="none" stroke="white" strokeWidth="6"
+                          strokeDasharray="289"
+                          strokeDashoffset={(1 - countdown / settings.timerSeconds) * 289}
+                          className="transition-all duration-1000"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+                <button 
+                  onClick={() => setShowModal(false)} 
+                  className="mt-6 px-6 py-3 bg-pink-600 hover:bg-pink-700 rounded-xl text-white text-lg font-semibold transition-colors shadow-lg"
+                  style={{ fontFamily: 'Roboto, sans-serif' }}
+                >
+                  Spin Again
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
+
+      {/* Activity Complete Modal */}
+      <AnimatePresence>
+        {showCompletion && (
+          <motion.div 
+            className="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", damping: 10, stiffness: 100 }}
+              className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-3xl p-8 md:p-12 max-w-lg text-center shadow-2xl"
+            >
+              <motion.h2 
+                className="text-4xl md:text-5xl font-bold mb-6"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 1, repeat: Infinity }}
+                style={{ fontFamily: 'Roboto, sans-serif' }}
+              >
+                Activity Complete! 🎉
+              </motion.h2>
+              <p className="text-lg md:text-xl mb-8 opacity-90" style={{ fontFamily: 'Roboto, sans-serif' }}>
+                Great job! You've completed all the spins.
+              </p>
+              <button 
+                onClick={handleRestart} 
+                className="px-8 py-4 bg-white text-orange-500 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-lg"
+                style={{ fontFamily: 'Roboto, sans-serif' }}
+              >
+                Restart Activity
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import SliceEditor from "../components/SliceEditor";
 import PreviewModal from "../components/PreviewModal";
 import { defaultSettings } from "../utils/defaults";
 import { InputModal } from "../components/InputModal";
+import { extractColorsFromImage } from "../utils/colorExtractor";
 
 export default function EditorPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -18,6 +19,7 @@ export default function EditorPage() {
   const [isNewSpinner, setIsNewSpinner] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [brandedImageUploading, setBrandedImageUploading] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -84,6 +86,42 @@ export default function EditorPage() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleBrandedImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setBrandedImageUploading(true);
+    try {
+      const url = await uploadImage(file);
+      const colors = await extractColorsFromImage(url);
+      setSettings(prev => prev ? { 
+        ...prev, 
+        brandedImageUrl: url,
+        brandColors: colors 
+      } : null);
+    } catch (error) {
+      alert('Failed to upload branded image');
+    } finally {
+      setBrandedImageUploading(false);
+    }
+  };
+
+  const getNextColor = () => {
+    if (!settings?.brandColors?.length) {
+      // Default palette if no brand colors
+      const defaultColors = ["#e74c3c", "#e67e22", "#f39c12", "#f1c40f", "#2ecc71", "#27ae60", "#3498db", "#2980b9", "#9b59b6", "#8e44ad", "#e91e63", "#c0392b"];
+      return defaultColors[settings?.slices.length % defaultColors.length];
+    }
+    
+    // Get unused brand color
+    const usedColors = new Set(settings.slices.map(s => s.color));
+    for (const color of settings.brandColors) {
+      if (!usedColors.has(color)) return color;
+    }
+    // If all used, cycle through
+    return settings.brandColors[settings.slices.length % settings.brandColors.length];
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
@@ -200,6 +238,46 @@ export default function EditorPage() {
               </div>
               
               <div className="border-t border-slate-600 pt-4">
+                <h3 className="text-lg font-semibold mb-3">Branding</h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Branded Image (for color palette):</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBrandedImageUpload}
+                      disabled={brandedImageUploading}
+                      className="text-sm"
+                    />
+                    {brandedImageUploading && <span className="ml-2 text-sm text-gray-400">Processing colors...</span>}
+                    {settings.brandedImageUrl && (
+                      <div className="mt-2">
+                        <img 
+                          src={settings.brandedImageUrl} 
+                          alt="Brand" 
+                          className="h-20 rounded cursor-pointer hover:scale-105 transition-transform" 
+                          onClick={() => window.open(settings.brandedImageUrl, '_blank')}
+                        />
+                        {settings.brandColors && (
+                          <div className="mt-2 flex gap-1">
+                            {settings.brandColors.map((color, i) => (
+                              <div
+                                key={i}
+                                className="w-6 h-6 rounded border border-gray-600"
+                                style={{ backgroundColor: color }}
+                                title={color}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-600 pt-4">
                 <h3 className="text-lg font-semibold mb-3">Background</h3>
                 
                 <div className="space-y-3">
@@ -215,7 +293,12 @@ export default function EditorPage() {
                     {uploading && <span className="ml-2 text-sm text-gray-400">Uploading...</span>}
                     {settings.backgroundUrl && (
                       <div className="mt-2 flex items-center gap-2">
-                        <img src={settings.backgroundUrl} alt="Background" className="h-20 rounded" />
+                        <img 
+                          src={settings.backgroundUrl} 
+                          alt="Background" 
+                          className="h-20 rounded cursor-pointer hover:scale-105 transition-transform" 
+                          onClick={() => window.open(settings.backgroundUrl, '_blank')}
+                        />
                         <button
                           onClick={() => setSettings({ ...settings, backgroundUrl: '' })}
                           className="text-red-400 hover:text-red-300 text-sm"
@@ -238,7 +321,7 @@ export default function EditorPage() {
                 const newSlice = {
                   id: Math.random().toString(36).slice(2, 9),
                   label: `Item ${settings.slices.length + 1}`,
-                  color: "#" + Math.floor(Math.random()*16777215).toString(16),
+                  color: getNextColor(),
                   outcomeText: "",
                   outcomeImageUrl: "",
                   disabled: false,

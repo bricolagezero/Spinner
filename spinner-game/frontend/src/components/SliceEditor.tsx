@@ -73,9 +73,17 @@ export default function SliceEditor({
           <input type="file" accept="image/*" onChange={async (e) => {
             const f = e.target.files?.[0]; if (!f) return;
             const url = await send(f, "icon"); onChange({ iconUrl: url });
-          }}/>
+          }/>
           {pctIcon > 0 && <div className="h-2 w-24 bg-slate-200 rounded overflow-hidden"><div className="h-2 bg-blue-500" style={{ width: `${pctIcon}%` }} /></div>}
-          {slice.iconUrl && <img src={slice.iconUrl} className="h-8 w-8 object-contain rounded" alt="icon" />}
+          {slice.iconUrl && (
+            <img 
+              src={slice.iconUrl} 
+              className="h-8 w-8 object-contain rounded cursor-pointer hover:scale-110 transition-transform" 
+              alt="icon"
+              onClick={() => window.open(slice.iconUrl, '_blank')}
+              title="Click to view full size"
+            />
+          )}
         </div>
 
         <textarea className="px-2 py-2 rounded border" rows={2} value={slice.outcomeText || ""} onChange={(e) => onChange({ outcomeText: e.target.value })} placeholder="Outcome text" />
@@ -86,9 +94,17 @@ export default function SliceEditor({
             <input type="file" accept="image/*" onChange={async (e) => {
               const f = e.target.files?.[0]; if (!f) return;
               const url = await send(f, "out"); onChange({ outcomeImageUrl: url });
-            }}/>
+            }/>
             {pctOut > 0 && <div className="h-2 w-24 bg-slate-200 rounded overflow-hidden"><div className="h-2 bg-green-500" style={{ width: `${pctOut}%` }} /></div>}
-            {slice.outcomeImageUrl && <img src={slice.outcomeImageUrl} className="h-12 w-12 object-cover rounded" alt="outcome" />}
+            {slice.outcomeImageUrl && (
+              <img 
+                src={slice.outcomeImageUrl} 
+                className="h-12 w-12 object-cover rounded cursor-pointer hover:scale-110 transition-transform" 
+                alt="outcome"
+                onClick={() => window.open(slice.outcomeImageUrl, '_blank')}
+                title="Click to view full size"
+              />
+            )}
           </div>
         </div>
       </div>

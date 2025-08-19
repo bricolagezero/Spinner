@@ -42,12 +42,11 @@ export async function getGame(slug: string): Promise<GetResponse> {
   return toJson<GetResponse>(res);
 }
 
-export async function createGame(settings: any, adminPass?: string): Promise<string> {
+export async function createGame(settings: any): Promise<string> {
   const res = await fetch(`${API_BASE}/games.php?path=games`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(adminPass ? { "x-admin-pass": adminPass } : {}),
     },
     credentials: "include",
     body: JSON.stringify({ settings }),
@@ -57,12 +56,11 @@ export async function createGame(settings: any, adminPass?: string): Promise<str
   return data.slug;
 }
 
-export async function updateGame(slug: string, settings: any, adminPass?: string) {
+export async function updateGame(slug: string, settings: any) {
   const res = await fetch(`${API_BASE}/games.php?path=games/${encodeURIComponent(slug)}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      ...(adminPass ? { "x-admin-pass": adminPass } : {}),
     },
     credentials: "include",
     body: JSON.stringify({ settings }),
@@ -100,5 +98,7 @@ export async function uploadImage(file: File, adminPass?: string): Promise<strin
   });
   const data = await toJson<{ url: string }>(res);
   if (!data.url) throw new Error("Upload failed: missing url");
+  return data.url;
+}
   return data.url;
 }

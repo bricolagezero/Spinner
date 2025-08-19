@@ -7,7 +7,7 @@ export type Slice = {
   iconUrl?: string;
   disabled?: boolean;
   outcomeFontSize?: number;   // px
-  outcomeImageScale?: number; // 0.2–1.0 (changed from 1.2)
+  outcomeImageScale?: number; // 0.2–1.0
 };
 
 export type GameSettings = {
@@ -19,6 +19,9 @@ export type GameSettings = {
   backgroundMode?: "image" | "gradient";
   backgroundUrl?: string;
   bgGradient?: { from: string; to: string; angle: number };
+  
+  brandedImageUrl?: string;
+  brandColors?: string[];
 
   allowRepeats: boolean;
   timerEnabled: boolean;

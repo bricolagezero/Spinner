@@ -35,6 +35,10 @@ export default function AdminPage() {
         }
         throw new Error(`List failed: ${res.status}`);
       }
+      // If we got here, we're authenticated
+      setShowLogin(false);
+      setIsAuthenticated(true);
+      
       const data = await res.json();
       const games = data.games ?? [];
       setList(games);
