@@ -41,6 +41,7 @@ export default function WheelPanel({
   const [showCompletion, setShowCompletion] = useState(false);
   const [sliceCountdown, setSliceCountdown] = useState<number | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [viewedSlices, setViewedSlices] = useState<string[]>([]);
 
   // responsive size - make it smaller
   const [size, setSize] = useState(500);
@@ -235,163 +236,170 @@ export default function WheelPanel({
   };
 
   return (
-    <div className="relative flex items-center justify-center">
-      {/* left-side SPIN button */}
-      <motion.button
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-        onClick={spin}
-        disabled={spinning || (!settings.allowRepeats && activeSlices.length === 0)}
-        className={`absolute -left-24 md:-left-32 top-1/2 -translate-y-1/2
-                    w-24 h-24 md:w-28 md:h-28 rounded-full grid place-items-center
-                    text-black font-extrabold text-sm md:text-base
-                    shadow-[0_0_35px_rgba(255,255,0,0.7)] border-4 border-yellow-200
-                    transition-all duration-300
-                    ${spinning ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-400 hover:bg-yellow-300 hover:scale-105"}`}
-        aria-label="Spin" title="Spin"
-      >
-        <div className="text-2xl md:text-3xl">⟳</div>
-        <div>SPIN</div>
-      </motion.button>
+    <div className="min-h-screen bg-gray-50 p-4 flex flex-col">
+      {/* Main content wrapper */}
+      <div className="flex-grow">
+        {/* Background image - responsive without cutting off buttons */}
+        {settings.backgroundImage && (
+          <div className="w-full flex justify-center mb-4">
+            <div className="w-full max-w-4xl" style={{ maxHeight: 'calc(100vh - 250px)' }}>
+              <img 
+                src={settings.backgroundImage} 
+                alt="Wheel background"
+                className="w-full h-full object-contain"
+                style={{ maxWidth: '100%', height: 'auto' }}
+              />
+            </div>
+          </div>
+        )}
 
-      {/* pointer (larger and centered) */}
-      <div
-        className="absolute left-1/2 -translate-x-1/2 -top-12 z-30"
-        style={{
-          width: 0,
-          height: 0,
-          borderLeft: "24px solid transparent",
-          borderRight: "24px solid transparent",
-          borderBottom: "40px solid rgba(255,255,255,0.98)",
-          filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.6))",
-          transform: "translateX(-50%) rotate(180deg)",
-        }}
-      />
+        {/* Wheel container */}
+        <div className="relative w-80 h-80 mx-auto">
+          {/* Triangle indicator - higher z-index */}
+          <div className="absolute left-1/2 -translate-x-1/2 -top-12 z-40">
+            <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[40px] border-b-red-600"></div>
+          </div>
 
-      {/* wheel */}
-      <div
-        ref={wheelRef}
-        style={wheelStyle}
-        className="relative rounded-full overflow-hidden select-none spinner-shadow bg-gradient-radial from-slate-800 to-slate-900 ring-8 ring-white/10"
-      >
-        <div className="absolute inset-0 rounded-full shadow-[inset_0_0_40px_rgba(255,255,255,0.15)]" />
-        <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full">
-          {settings.slices.map((s, i) => (
-            <motion.path
-              key={s.id}
-              d={slicePath(i)}
-              fill={s.disabled ? desaturate(s.color) : s.color}
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.02, type: "spring", stiffness: 140, damping: 18 }}
-              className="stroke-slate-800 stroke-1"
-            />
-          ))}
+          {/* Wheel */}
+          <div
+            className="relative w-full h-full rounded-full overflow-hidden shadow-2xl transition-transform duration-[3000ms] ease-out"
+            style={{ transform: `rotate(${rotation}deg)` }}
+          >
+            {settings.slices.map((slice, index) => {
+              const angle = 360 / settings.slices.length;
+              const skew = 90 - angle;
+              const rotation = index * angle;
+              const isViewed = viewedSlices.includes(slice.id);
 
-          {/* icons and labels */}
-          {settings.slices.map((s, i) => {
-            const angle = i * sliceAngle + sliceAngle / 2;
-            const rad = (angle * Math.PI) / 180;
-            
-            // Icon positioning (closer to center)
-            const iconRadius = radius * 0.45;
-            const iconX = cx + iconRadius * Math.sin(rad);
-            const iconY = cy - iconRadius * Math.cos(rad);
-            
-            // Text positioning (further out)
-            const textRadius = radius * 0.7;
-            const textX = cx + textRadius * Math.sin(rad);
-            const textY = cy - textRadius * Math.cos(rad);
-            
-            const isWinner = resultIndex === i && !spinning;
-            const counter = isWinner ? -rotationResidual : 0;
-            
-            const fontSize = Math.max(10, Math.floor(size / 35));
-            const lines = wrapText(s.label, sliceAngle * 2);
-            
-            return (
-              <motion.g 
-                key={`${s.id}-content`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 + i * 0.05 }}
-              >
-                {/* Icon or Number */}
-                {s.iconUrl ? (
-                  <g transform={`translate(${iconX},${iconY}) rotate(${counter}) translate(${-iconX},${-iconY})`}>
-                    <image
-                      href={s.iconUrl}
-                      x={iconX - 20}
-                      y={iconY - 20}
-                      width="40"
-                      height="40"
-                      preserveAspectRatio="xMidYMid meet"
-                    />
-                  </g>
-                ) : (
-                  <g transform={`translate(${iconX},${iconY}) rotate(${counter}) translate(${-iconX},${-iconY})`}>
-                    <text
-                      x={iconX}
-                      y={iconY}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fontSize={Math.floor(size / 25)}
-                      fill="#fff"
-                      opacity="0.5"
-                      style={{ fontFamily: 'Roboto, sans-serif', fontWeight: 'bold' }}
+              return (
+                <div
+                  key={slice.id}
+                  className="absolute w-1/2 h-1/2 origin-bottom-right"
+                  style={{
+                    transform: `rotate(${rotation}deg) skewY(-${skew}deg)",
+                    top: '0',
+                    left: '0',
+                  }}
+                >
+                  <div
+                    className="w-full h-full"
+                    style={{
+                      backgroundColor: slice.color,
+                      opacity: isViewed ? 0.5 : 1,
+                      filter: isViewed ? 'grayscale(70%)' : 'none',
+                      transformOrigin: 'right bottom',
+                      transform: `skewY(${skew}deg)`,
+                    }}
+                  />
+                  
+                  {/* Slice content */}
+                  <div
+                    className="absolute inset-0 flex items-center justify-center"
+                    style={{
+                      transform: `skewY(${skew}deg) rotate(${angle / 2}deg)`,
+                    }}
+                  >
+                    <div 
+                      className="text-center flex flex-col items-center justify-center"
+                      style={{
+                        transform: `rotate(-${rotation + angle / 2}deg)",
+                      }}
                     >
-                      {String(i + 1).padStart(2, '0')}
-                    </text>
-                  </g>
-                )}
-                
-                {/* Label */}
-                <g transform={`translate(${textX},${textY}) rotate(${counter}) translate(${-textX},${-textY})`}>
-                  {lines.map((line, lineIndex) => (
-                    <text
-                      key={lineIndex}
-                      x={textX}
-                      y={textY + (lineIndex - (lines.length - 1) / 2) * fontSize * 1.2}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fontSize={fontSize}
-                      fill="#fff"
-                      style={{ fontFamily: 'Roboto, sans-serif' }}
-                      className={isWinner ? "font-bold drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] transition-transform duration-200 ease-out" : "drop-shadow-sm"}
-                    >
-                      {line}
-                    </text>
-                  ))}
-                </g>
-              </motion.g>
-            );
-          })}
+                      {/* Number always on top and bigger */}
+                      <div className="text-3xl font-bold text-white mb-1 drop-shadow-lg">
+                        {index + 1}
+                      </div>
+                      {/* Text below number */}
+                      <div className="text-sm text-white px-2 font-medium drop-shadow">
+                        {slice.label}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-          <circle cx={cx} cy={cy} r={size * 0.04} fill="#e2e8f0" className="drop-shadow-lg" />
-          <circle cx={cx} cy={cy} r={size * 0.028} fill="#f8fafc" />
-        </svg>
+          {/* Center cap */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-xl z-30"></div>
+        </div>
+
+        {/* Spin button */}
+        <div className="text-center mt-8">
+          <button
+            onClick={spin}
+            disabled={spinning || viewedSlices.length === settings.slices.length}
+            className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {spinning ? 'Spinning...' : 'Spin the Wheel'}
+          </button>
+        </div>
       </div>
 
-      {/* outcome modal with animated border */}
-      <AnimatePresence>
-        {showModal && current && (
-          <motion.div 
-            className="modal-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0, rotate: -10 }}
-              animate={{ scale: 1, opacity: 1, rotate: 0 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: "spring", damping: 15, stiffness: 200 }}
-              className="relative"
+      {/* Footer - centered at bottom */}
+      <footer className="mt-8 py-4 text-center text-sm text-gray-600">
+        <p>&copy; 2024 Spinner Game. All rights reserved.</p>
+      </footer>
+
+      {/* Slice modal */}
+      {showModal && current && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4">{current.label}</h2>
+            
+            {current.timerSeconds && current.timerSeconds > 0 && (
+              <div className="mb-4 text-lg">
+                Time remaining: {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
+              </div>
+            )}
+
+            {/* Button based on whether all slices are viewed */}
+            {viewedSlices.length === settings.slices.length ? (
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setShowCompletionModal(true);
+                }}
+                className="mt-4 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"
+              >
+                Close
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  spin();
+                }}
+                className="mt-4 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"
+              >
+                Spin Again
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Completion modal */}
+      {showCompletionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full">
+            <h2 className="text-3xl font-bold mb-4 text-center text-green-600">Activity Complete!</h2>
+            <p className="text-lg text-center mb-6">Congratulations! You've viewed all slices.</p>
+            <button
+              onClick={() => {
+                setShowCompletionModal(false);
+                // Reset or navigate
+              }}
+              className="px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600 w-full font-semibold"
             >
-              {/* Animated gradient border */}
-              <div className="absolute inset-0 rounded-2xl p-1 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-gradient-rotate" />
+              Finish
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
               </div>
               
               {/* Content */}
