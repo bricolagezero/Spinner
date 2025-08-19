@@ -35,11 +35,20 @@
   .modal-backdrop {
     @apply fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[9998];
   }
+  
+  .bg-gradient-radial {
+    background-image: radial-gradient(circle at 30% 30%, #0b1220, transparent 60%);
+  }
 }
 
-/* Fix for gradient backgrounds */
-.bg-gradient-radial {
-  background-image: radial-gradient(circle at 30% 30%, #0b1220, transparent 60%);
+/* Fix for height issues */
+.min-h-screen {
+  min-height: 100vh;
+}
+
+/* Button defaults */
+button {
+  cursor: pointer;
 }
 
 /* Animations */
