@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { GameSettings } from "../types";
 import WheelPanel from "./WheelPanel";
 import { motion } from "framer-motion";

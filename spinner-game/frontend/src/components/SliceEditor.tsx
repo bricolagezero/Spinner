@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Slice } from "../types";
 import { uploadFile } from "../utils/upload";
 import { API_BASE } from "../utils/api";

@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { GameSettings } from "../types";
 
 // small helpers
-const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
 const DEFAULT_PALETTE = ["#ff4d4f", "#ffd43b", "#40c057", "#4dabf7", "#845ef7", "#f783ac", "#ffa94d", "#2f9e44"];
 const hexToRgb = (hex: string): [number, number, number] => {
   const h = hex.replace("#", "");
@@ -24,7 +23,7 @@ const desaturate = (hex: string) => {
 export default function WheelPanel({
   settings,
   setSettings,
-  sleekMode,
+  sleekMode = false,
 }: {
   settings: GameSettings;
   setSettings: (u: any) => void;
@@ -291,4 +290,5 @@ export default function WheelPanel({
       )}
     </div>
   );
+}
 }

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Edit, Link, QrCode } from 'lucide-react';
-import { GameSettings } from '../types';
 import { UrlModal } from './UrlModal';
 import { QrCodeModal } from './QrCodeModal';
 
@@ -63,4 +62,5 @@ export const SpinnerCard: React.FC<SpinnerCardProps> = ({ slug, title, updatedAt
       />
     </>
   );
+};
 };
