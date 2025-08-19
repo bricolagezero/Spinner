@@ -276,7 +276,7 @@ export default function EditorPage() {
                             {settings.brandColors.map((color, i) => (
                               <div
                                 key={i}
-                                className="w-6 h-6 rounded-full border border-gray-600"
+                                className="w-6 h-6 rounded border border-gray-600"
                                 style={{ backgroundColor: color }}
                                 title={color}
                               />
@@ -328,25 +328,6 @@ export default function EditorPage() {
 
         {activeTab === 1 && (
           <div>
-            {settings.brandColors && settings.brandColors.length > 0 && (
-              <div className="mb-6 p-4 bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700">
-                <h3 className="text-sm font-medium mb-2">Brand Colors</h3>
-                <div className="flex gap-2">
-                  {settings.brandColors.map((color, i) => (
-                    <div
-                      key={i}
-                      className="w-8 h-8 rounded-full border-2 border-gray-600 cursor-pointer hover:scale-110 transition-transform"
-                      style={{ backgroundColor: color }}
-                      title={`Click to copy: ${color}`}
-                      onClick={() => {
-                        navigator.clipboard.writeText(color);
-                        alert(`Copied ${color} to clipboard!`);
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
             <button
               onClick={() => {
                 const newSlice = {

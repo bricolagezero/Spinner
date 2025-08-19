@@ -54,6 +54,19 @@ export default function SliceEditor({
           <div className="flex items-center gap-2">
             <span className="text-sm">Color</span>
             <input type="color" value={slice.color} onChange={(e) => onChange({ color: e.target.value })} />
+            {settings.brandColors && settings.brandColors.length > 0 && (
+              <div className="flex gap-1">
+                {settings.brandColors.map((color, i) => (
+                  <button
+                    key={i}
+                    className="w-6 h-6 rounded-full border border-gray-400 hover:scale-110 transition-transform"
+                    style={{ backgroundColor: color }}
+                    title={color}
+                    onClick={() => onChange({ color })}
+                  />
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm">Font size</span>

@@ -8,6 +8,7 @@ import PreviewModal from "../components/PreviewModal";
 import { defaultSettings } from "../utils/defaults";
 import { InputModal } from "../components/InputModal";
 import { extractColorsFromImage } from "../utils/colorExtractor";
+import { QRCodeCanvas } from "qrcode.react";
 
 export default function EditorPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -404,6 +405,13 @@ export default function EditorPage() {
           defaultValue="New Spin Game"
         />
       )}
+
+      {/* QR Code Download Section */}
+      <div className="hidden">
+        <div id="qr-code" className="bg-white p-4 rounded-lg">
+          <QRCodeCanvas value={window.location.href} size={256} level="H" />
+        </div>
+      </div>
     </div>
   );
 }
