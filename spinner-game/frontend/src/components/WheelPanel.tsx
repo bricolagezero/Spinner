@@ -70,16 +70,26 @@ export default function WheelPanel({
     o.connect(g); g.connect(ctx.destination); o.start();
     setTimeout(() => { g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08); o.stop(ctx.currentTime + 0.09); }, 10);
   };
-  const playWhoosh = () => {
-    const ctx = audioCtxRef.current; if (!ctx) return;
+
+  // NEW: unify spin duration, whoosh promise handle, and sleep helper
+  const SPIN_DURATION_MS = 3800;
+  const whooshPromiseRef = useRef<Promise<void> | null>(null);
+  const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+
+  // Make whoosh last the entire spin and return a promise when done
+  const playWhoosh = (durationMs: number = SPIN_DURATION_MS) => {
+    const ctx = audioCtxRef.current;
+    if (!ctx) return Promise.resolve();
     const o = ctx.createOscillator(), g = ctx.createGain();
+    const dur = durationMs / 1000;
     o.type = "sawtooth";
     o.frequency.setValueAtTime(220, ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.9);
+    o.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + dur);
     g.gain.setValueAtTime(0.0001, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.2);
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.0);
-    o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 1.0);
+    g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + Math.min(0.3, dur * 0.2));
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + dur);
+    return sleep(durationMs);
   };
 
   const pickIndex = () => {
@@ -93,34 +103,37 @@ export default function WheelPanel({
   const spin = () => {
     if (spinning) return;
     if ((!settings.allowRepeats && activeSlices.length === 0) || settings.slices.length === 0) return;
-    
-    // Call onSpinStart if provided
     onSpinStart?.();
-    
+
     const idx = pickIndex();
-    
-    // Calculate rotation to center the winning slice under the triangle
     const sliceAngle = 360 / settings.slices.length;
     const sliceStartAngle = idx * sliceAngle;
     const sliceCenterAngle = sliceStartAngle + (sliceAngle / 2);
-    
-    // Adjust final rotation to center slice under triangle (which is at top/0 degrees)
     const spins = 6 + Math.floor(Math.random() * 3);
     const finalRotation = spins * 360 + (360 - sliceCenterAngle);
-    
+
     setSpinning(true);
     setResultIndex(idx);
     setCountdown(null);
-    playWhoosh();
-    let ticks = 0;
-    const t = setInterval(() => { playTick(); if (++ticks > 22) clearInterval(t); }, 120);
+
+    // Start whoosh and keep a handle to await later
+    whooshPromiseRef.current = playWhoosh(SPIN_DURATION_MS);
+
+    // Stretch tick sounds across the entire spin duration
+    const interval = Math.max(70, Math.floor(SPIN_DURATION_MS / 24));
+    const start = performance.now();
+    const t = setInterval(() => {
+      playTick();
+      if (performance.now() - start >= SPIN_DURATION_MS - 20) clearInterval(t);
+    }, interval);
+
     requestAnimationFrame(() => setRotation((r) => r + finalRotation));
   };
 
   const wheelRef = useRef<SVGGElement>(null);
   const wheelStyle: React.CSSProperties = {
     transform: "rotate(" + rotation + "deg)",
-    transition: spinning ? "transform 3.8s cubic-bezier(0.17,0.67,0.32,1.29)" : "none",
+    transition: spinning ? `transform ${SPIN_DURATION_MS / 1000}s cubic-bezier(0.17,0.67,0.32,1.29)` : "none",
     transformOrigin: "center",
     transformBox: "fill-box",
     willChange: "transform",
@@ -131,38 +144,34 @@ export default function WheelPanel({
 
   useEffect(() => {
     const el = wheelRef.current; if (!el) return;
-    const onEnd = () => {
+    const onEnd = async () => {
       if (!spinning) return;
       setSpinning(false);
-      
-      // Call onSpinEnd if provided
-      onSpinEnd?.();
-      
-      // Add 1-second delay before showing modal
-      setTimeout(() => {
-        setShowModal(true);
-        if (settings.timerEnabled) {
-          const totalSeconds = (settings.timerMinutes || 0) * 60 + (settings.timerSeconds || 0);
-          setCountdown(totalSeconds);
-        } // <-- close the timerEnabled block
 
-        // Set per-slice timer if available
-        if (resultIndex != null && settings.slices[resultIndex].timerSeconds) {
-          setSliceCountdown(settings.slices[resultIndex].timerSeconds);
-        }
-        // Mark slice as viewed
-        if (resultIndex != null) {
-          const sliceId = settings.slices[resultIndex].id;
-          if (!viewedSlices.includes(sliceId)) {
-            setViewedSlices(prev => [...prev, sliceId]);
-          }
-        }
-        if (!settings.allowRepeats && resultIndex != null) {
-          const next = settings.slices.map((s, i) => (i === resultIndex ? { ...s, disabled: true } : s));
-          setSettings({ ...settings, slices: next });
-        }
-      }, 1000);
-      
+      // Inform external listeners when the wheel visually stops
+      onSpinEnd?.();
+
+      // Wait for whoosh to finish, then pause 1s, then perform actions
+      try { await (whooshPromiseRef.current || Promise.resolve()); } catch {}
+      await sleep(1000);
+
+      setShowModal(true);
+      if (settings.timerEnabled) {
+        const totalSeconds = (settings.timerMinutes || 0) * 60 + (settings.timerSeconds || 0);
+        setCountdown(totalSeconds);
+      }
+      if (resultIndex != null && settings.slices[resultIndex].timerSeconds) {
+        setSliceCountdown(settings.slices[resultIndex].timerSeconds);
+      }
+      if (resultIndex != null) {
+        const sliceId = settings.slices[resultIndex].id;
+        if (!viewedSlices.includes(sliceId)) setViewedSlices(prev => [...prev, sliceId]);
+      }
+      if (!settings.allowRepeats && resultIndex != null) {
+        const next = settings.slices.map((s, i) => (i === resultIndex ? { ...s, disabled: true } : s));
+        setSettings({ ...settings, slices: next });
+      }
+
       // Confetti effect
       const root = document.createElement("div");
       root.style.position = "fixed"; root.style.inset = "0"; root.style.pointerEvents = "none";
@@ -258,7 +267,7 @@ export default function WheelPanel({
           <img
             src={settings.backgroundUrl}
             alt=""
-            className="max-w-full max-h-full object-contain"
+            className="w-full h-full object-cover"
           />
         </div>
       )}

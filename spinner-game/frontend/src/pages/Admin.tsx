@@ -19,7 +19,7 @@ export default function AdminPage() {
   const [urlModalSlug, setUrlModalSlug] = useState<string | null>(null);
   const [qrModalSlug, setQrModalSlug] = useState<string | null>(null);
   const [deleteModalSlug, setDeleteModalSlug] = useState<string | null>(null);
-  const [showLogin, setShowLogin] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   async function load() {
@@ -74,9 +74,8 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    // Always require login on each visit; don't auto-load here to avoid flicker
-    setShowLogin(true);
-    setIsAuthenticated(false);
+    // Try to load; if backend says 401 we'll prompt for login
+    load();
   }, []);
 
   async function onNewSpinner() {
@@ -210,3 +209,4 @@ export default function AdminPage() {
     </div>
   );
 }
+

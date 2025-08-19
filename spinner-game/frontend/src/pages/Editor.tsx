@@ -21,8 +21,14 @@ export default function EditorPage() {
   const [showNameModal, setShowNameModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [brandedImageUploading, setBrandedImageUploading] = useState(false);
-  const [showLogin, setShowLogin] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Helper to detect 401s from different error shapes
+  const isUnauthorized = (e: any) =>
+    e?.status === 401 ||
+    e?.response?.status === 401 ||
+    /401/.test(String(e?.message));
 
   // Add utilities and handlers referenced in JSX
   const DEFAULT_COLORS = ['#2563eb','#7c3aed','#dc2626','#f59e0b','#16a34a','#0891b2','#d946ef','#f43f5e'];
@@ -58,7 +64,11 @@ export default function EditorPage() {
         brandColors: colors && colors.length > 0 ? colors : settings.brandColors || DEFAULT_COLORS,
       });
     } catch (error: any) {
-      setErr(error?.message || "Failed to process branded image");
+      if (isUnauthorized(error)) {
+        setShowLogin(true);
+      } else {
+        setErr(error?.message || "Failed to process branded image");
+      }
     } finally {
       setBrandedImageUploading(false);
       if (e.target) e.target.value = "";
@@ -74,7 +84,11 @@ export default function EditorPage() {
       const url = await uploadImage(file);
       setSettings({ ...settings, backgroundUrl: url });
     } catch (error: any) {
-      setErr(error?.message || "Failed to upload background image");
+      if (isUnauthorized(error)) {
+        setShowLogin(true);
+      } else {
+        setErr(error?.message || "Failed to upload background image");
+      }
     } finally {
       setUploading(false);
       if (e.target) e.target.value = "";
@@ -95,7 +109,11 @@ export default function EditorPage() {
         await updateGame(slug, settings);
       }
     } catch (error: any) {
-      setErr(error?.message || "Failed to save");
+      if (isUnauthorized(error)) {
+        setShowLogin(true);
+      } else {
+        setErr(error?.message || "Failed to save");
+      }
     } finally {
       setLoading(false);
     }
@@ -108,19 +126,13 @@ export default function EditorPage() {
   };
 
   useEffect(() => {
-    // Require login each visit
-    setShowLogin(true);
-    setIsAuthenticated(false);
-  }, []);
-
-  useEffect(() => {
     (async () => {
-      if (!slug || !isAuthenticated) return;
+      if (!slug) return;
       setLoading(true);
       setErr(null);
       try {
         if (slug === 'new') {
-          // Create new spinner
+          // Create new spinner locally; auth only needed on save/upload
           setSettings(defaultSettings());
           setIsNewSpinner(true);
           setShowNameModal(true);
@@ -135,12 +147,7 @@ export default function EditorPage() {
         setLoading(false);
       }
     })();
-  }, [slug, isAuthenticated]);
-
-  // Show login modal BEFORE any loading UI to avoid stuck "Loading…"
-  if (showLogin && !isAuthenticated) {
-    return <LoginModal onLogin={handleLogin} />;
-  }
+  }, [slug]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
   if (err) return <div className="min-h-screen flex items-center justify-center text-red-500">{err}</div>;
