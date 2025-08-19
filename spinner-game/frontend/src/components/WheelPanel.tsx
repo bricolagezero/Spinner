@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { GameSettings } from "../types";
 
 // small helpers
@@ -300,6 +301,12 @@ export default function WheelPanel({
   );
   const spinsLeft = Math.max(0, initialTotalRef.current - uniqueSeenCount);
 
+  // Find the page-level root to contain edge controls when in sleekMode (Viewer)
+  const viewerRoot = useMemo(() => {
+    if (typeof document === "undefined") return null;
+    return document.querySelector("[data-viewer-root]") as HTMLElement | null;
+  }, []);
+
   return (
     <div
       ref={containerRef}
@@ -339,38 +346,28 @@ export default function WheelPanel({
           </div>
 
           {/* Spin button: edge-pinned and 2x size in sleekMode; original placement otherwise */}
-          <button
-            onClick={spin}
-            disabled={spinning || activeSlices.length === 0}
-            className={`${
-              sleekMode
-                ? "fixed left-[30px] top-1/2 -translate-y-1/2 w-40 h-40 md:w-48 md:h-48 border-8"
-                : "absolute -left-20 top-1/2 -translate-y-1/2 w-20 h-20 md:w-24 md:h-24 border-4"
-            } rounded-full grid place-items-center text-black font-extrabold
-            shadow-[0_0_45px_rgba(255,255,0,0.7)] transition-all duration-300
-            ${spinning ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-400 hover:bg-yellow-300 hover:scale-105"}`}
-            style={{ zIndex: sleekMode ? 10 : undefined }}
-            aria-label="Spin"
-            title="Spin"
-          >
-            <div className={`${sleekMode ? "text-4xl md:text-5xl" : "text-2xl md:text-3xl"} leading-none`}>⟳</div>
-            <div className={`${sleekMode ? "mt-1 text-lg md:text-xl" : ""}`}>SPIN</div>
-          </button>
-
-          {/* Spins Left counter: edge-pinned and larger in sleekMode; original placement otherwise */}
-          <div
-            className={`${
-              sleekMode
-                ? "fixed right-[30px] top-1/2 -translate-y-1/2 w-48 md:w-56 px-3 py-4 border-2"
-                : "absolute -right-20 top-1/2 -translate-y-1/2 w-24 md:w-28 px-2 py-3 border"
-            } rounded-2xl bg-white/10 border-white/30 backdrop-blur-md text-white text-center shadow-xl`}
-            style={{ zIndex: sleekMode ? 10 : undefined }}
-          >
-            <div className={`${sleekMode ? "text-sm md:text-base" : "text-xs md:text-sm"} opacity-90`}>Spins Left</div>
-            <div className={`${sleekMode ? "text-2xl md:text-3xl" : "text-xl md:text-2xl"} font-extrabold`}>
-              {spinsLeft}/{initialTotalRef.current}
-            </div>
-          </div>
+          {!sleekMode && (
+            <>
+              <button
+                onClick={spin}
+                disabled={spinning || activeSlices.length === 0}
+                className="absolute -left-20 top-1/2 -translate-y-1/2 w-20 h-20 md:w-24 md:h-24 border-4 rounded-full grid place-items-center
+                  text-black font-extrabold shadow-[0_0_45px_rgba(255,255,0,0.7)] transition-all duration-300
+                  bg-yellow-400 hover:bg-yellow-300 hover:scale-105"
+                aria-label="Spin"
+                title="Spin"
+              >
+                <div className="text-2xl md:text-3xl leading-none">⟳</div>
+                <div>SPIN</div>
+              </button>
+              <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-24 md:w-28 px-2 py-3 border rounded-2xl bg-white/10 border-white/30 backdrop-blur-md text-white text-center shadow-xl">
+                <div className="text-xs md:text-sm opacity-90">Spins Left</div>
+                <div className="text-xl md:text-2xl font-extrabold">
+                  {spinsLeft}/{initialTotalRef.current}
+                </div>
+              </div>
+            </>
+          )}
 
           {/* SVG Wheel */}
           <svg width={size} height={size} className="drop-shadow-2xl" style={{ overflow: "visible" }}>
@@ -481,6 +478,35 @@ export default function WheelPanel({
         </motion.div>
       </div>
 
+      {/* Controls: portal large and page-edge-contained in sleekMode */}
+      {sleekMode && viewerRoot && createPortal(
+        <>
+          <button
+            onClick={spin}
+            disabled={spinning || activeSlices.length === 0}
+            className="absolute left-[30px] top-1/2 -translate-y-1/2 w-40 h-40 md:w-48 md:h-48 border-8 rounded-full grid place-items-center
+              text-black font-extrabold shadow-[0_0_45px_rgba(255,255,0,0.7)] transition-all duration-300
+              bg-yellow-400 hover:bg-yellow-300 hover:scale-105"
+            style={{ zIndex: 40 }}
+            aria-label="Spin"
+            title="Spin"
+          >
+            <div className="text-4xl md:text-5xl leading-none">⟳</div>
+            <div className="mt-1 text-lg md:text-xl">SPIN</div>
+          </button>
+          <div
+            className="absolute right-[30px] top-1/2 -translate-y-1/2 w-48 md:w-56 px-3 py-4 border-2 rounded-2xl bg-white/10 border-white/30 backdrop-blur-md text-white text-center shadow-xl"
+            style={{ zIndex: 40 }}
+          >
+            <div className="text-sm md:text-base opacity-90">Spins Left</div>
+            <div className="text-2xl md:text-3xl font-extrabold">
+              {spinsLeft}/{initialTotalRef.current}
+            </div>
+          </div>
+        </>,
+        viewerRoot
+      )}
+
       {/* Slice modal */}
       <AnimatePresence>
         {showModal && current && (
@@ -499,7 +525,7 @@ export default function WheelPanel({
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="absolute inset-[5px] bg-white backdrop-blur-md rounded-2xl p-4 md:p-6 overflow-hidden shadow-2xl"
+                className="absolute inset-[5px] bg-white backdrop-blur-md rounded-[12%] p-4 md:p-6 overflow-hidden shadow-2xl"
               >
                 {/* Subtle animated border aligned to the panel edges */}
                 <svg
@@ -516,18 +542,20 @@ export default function WheelPanel({
                       <stop offset="100%" stopColor="#7c3aed" />
                     </linearGradient>
                   </defs>
+                  {/* Animated stroke at 5px, inset by half the stroke (2.5) */}
                   <rect
-                    x="0.75" y="0.75" width="98.5" height="98.5" rx="12" ry="12"
+                    x="2.5" y="2.5" width="95" height="95" rx="12" ry="12"
                     fill="none"
                     stroke="url(#sliceModalBorderGrad)"
-                    strokeWidth="1.25"
+                    strokeWidth="5"
                     strokeLinecap="round"
                     strokeDasharray="18 10"
                   >
                     <animate attributeName="stroke-dashoffset" from="0" to="-180" dur="8s" repeatCount="indefinite" />
                   </rect>
+                  {/* Subtle inner outline aligned to the same geometry */}
                   <rect
-                    x="0.75" y="0.75" width="98.5" height="98.5" rx="12" ry="12"
+                    x="2.5" y="2.5" width="95" height="95" rx="12" ry="12"
                     fill="none"
                     stroke="#000"
                     strokeOpacity="0.08"
