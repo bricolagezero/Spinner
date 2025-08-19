@@ -10,7 +10,8 @@ export function uploadFile(
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
-    if (opts?.adminPassword) xhr.setRequestHeader("x-admin-pass", opts.adminPassword);
+    // Make sure header name matches exactly what PHP expects
+    if (opts?.adminPassword) xhr.setRequestHeader("X-Admin-Pass", opts.adminPassword);
     xhr.withCredentials = true;
 
     xhr.upload.onprogress = (e) => {

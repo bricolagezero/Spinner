@@ -12,11 +12,22 @@ export default function SliceEditor({
   const [pctOut, setPctOut] = useState(0);
 
   const send = async (f: File, kind: "icon" | "out") => {
-    const { url } = await uploadFile(`${API_BASE}/upload.php`, f, {
-      onProgress: (p) => (kind === "icon" ? setPctIcon(p) : setPctOut(p)),
-      adminPassword,
-    });
-    return url;
+    try {
+      // Debug: Check if adminPassword is being passed
+      if (!adminPassword) {
+        console.warn("No admin password provided for upload!");
+      }
+      
+      const { url } = await uploadFile(`${API_BASE}/upload.php`, f, {
+        onProgress: (p) => (kind === "icon" ? setPctIcon(p) : setPctOut(p)),
+        adminPassword,
+      });
+      return url;
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
   };
 
   return (

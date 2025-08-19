@@ -23,17 +23,31 @@ header('Content-Type: application/json; charset=utf-8');
 
 // Auth: either existing session OR correct x-admin-pass header
 $headerPass = '';
+$allHeaders = [];
+
+// Debug: Log all headers (remove this in production)
 foreach ($_SERVER as $key => $value) {
+  if (strpos($key, 'HTTP_') === 0) {
+    $allHeaders[$key] = $value;
+  }
   if (strtoupper($key) === 'HTTP_X_ADMIN_PASS') {
     $headerPass = $value;
-    break;
   }
 }
+
+// Debug: Log what we found (remove this in production)
+error_log("Upload headers: " . json_encode($allHeaders));
+error_log("Admin pass header found: " . ($headerPass ? 'yes' : 'no'));
+error_log("Session authed: " . (!empty($_SESSION['authed']) ? 'yes' : 'no'));
 
 $authed = !empty($_SESSION['authed']) || (is_string($headerPass) && $headerPass !== '' && hash_equals($ADMIN_PASSWORD, $headerPass));
 if (!$authed) {
   http_response_code(401);
-  echo json_encode(['error' => 'Unauthorized']);
+  echo json_encode(['error' => 'Unauthorized', 'debug' => [
+    'has_session' => !empty($_SESSION['authed']),
+    'has_header' => !empty($headerPass),
+    'headers' => array_keys($allHeaders) // Don't expose values in production
+  ]]);
   exit;
 }
 
