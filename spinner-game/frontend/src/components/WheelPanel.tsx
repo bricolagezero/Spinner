@@ -363,8 +363,8 @@ export default function WheelPanel({
             );
           })}
 
-          <circle cx={cx} cy={cy} r={size * 0.04} fill="#111" className="drop-shadow-lg" />
-          <circle cx={cx} cy={cy} r={size * 0.028} fill="#222" />
+          <circle cx={cx} cy={cy} r={size * 0.04} fill="#e2e8f0" className="drop-shadow-lg" />
+          <circle cx={cx} cy={cy} r={size * 0.028} fill="#f8fafc" />
         </svg>
       </div>
 
