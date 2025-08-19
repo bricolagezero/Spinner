@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { getGame, updateGame, createGame } from "../utils/api";
+import { getGame, updateGame, createGame, uploadImage } from "../utils/api";
 import { GameSettings } from "../types";
 import WheelPanel from "../components/WheelPanel";
 import SliceEditor from "../components/SliceEditor";
 import PreviewModal from "../components/PreviewModal";
 import { defaultSettings } from "../utils/defaults";
+import { InputModal } from "../components/InputModal";
 
 export default function EditorPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -13,9 +14,10 @@ export default function EditorPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [settings, setSettings] = useState<GameSettings | null>(null);
-  const [adminPassword, setAdminPassword] = useState("");
   const [activeTab, setActiveTab] = useState(0);
   const [isNewSpinner, setIsNewSpinner] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -27,6 +29,7 @@ export default function EditorPage() {
           // Create new spinner
           setSettings(defaultSettings());
           setIsNewSpinner(true);
+          setShowNameModal(true);
         } else {
           const g = await getGame(slug);
           setSettings(g.settings);
@@ -43,29 +46,45 @@ export default function EditorPage() {
   async function onSave() {
     if (!settings) return;
     
-    // Check if password is provided
-    if (!adminPassword) {
-      alert("Please enter the admin password");
-      return;
-    }
-    
     try {
       if (isNewSpinner) {
         // Create new game
-        const newSlug = await createGame(settings, adminPassword);
+        const newSlug = await createGame(settings);
         alert("Created successfully!");
         nav(`/admin/edit/${newSlug}`);
+        setIsNewSpinner(false);
       } else {
         // Update existing game
-        await updateGame(slug!, settings, adminPassword);
+        await updateGame(slug!, settings);
         alert("Saved successfully!");
-        nav("/admin");
       }
     } catch (e: any) {
       console.error("Save error:", e);
-      alert(e.message || "Save failed - check if admin password is correct");
+      alert(e.message || "Save failed");
     }
   }
+
+  const handleNameSubmit = (name: string) => {
+    if (settings) {
+      setSettings({ ...settings, title: name });
+    }
+    setShowNameModal(false);
+  };
+
+  const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploading(true);
+    try {
+      const url = await uploadImage(file);
+      setSettings(prev => prev ? { ...prev, backgroundUrl: url } : null);
+    } catch (error) {
+      alert('Failed to upload background image');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading…</div>;
   if (err) return <div className="min-h-screen flex items-center justify-center text-red-500">{err}</div>;
@@ -123,17 +142,90 @@ export default function EditorPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  Admin Password:
-                  <span className="text-xs text-gray-400 ml-2">(Required for saving)</span>
-                </label>
+                <label className="block text-sm font-medium mb-2">Creator:</label>
                 <input
-                  type="password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
+                  value={settings.creator || ""}
+                  onChange={(e) => setSettings({ ...settings, creator: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:border-blue-500 focus:outline-none transition-colors"
-                  placeholder="Enter admin password"
+                  placeholder="Your name"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Footer Text:</label>
+                <input
+                  value={settings.footer || ""}
+                  onChange={(e) => setSettings({ ...settings, footer: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:border-blue-500 focus:outline-none transition-colors"
+                  placeholder="Footer text (optional)"
+                />
+              </div>
+              
+              <div className="border-t border-slate-600 pt-4">
+                <h3 className="text-lg font-semibold mb-3">Game Options</h3>
+                
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={!settings.allowRepeats}
+                      onChange={(e) => setSettings({ ...settings, allowRepeats: !e.target.checked })}
+                      className="w-4 h-4 rounded"
+                    />
+                    <span>Gray out slices after they're landed on</span>
+                  </label>
+                  
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={settings.timerEnabled}
+                      onChange={(e) => setSettings({ ...settings, timerEnabled: e.target.checked })}
+                      className="w-4 h-4 rounded"
+                    />
+                    <span>Enable countdown timer</span>
+                  </label>
+                  
+                  {settings.timerEnabled && (
+                    <div className="ml-7 flex items-center gap-2">
+                      <label className="text-sm">Timer seconds:</label>
+                      <input
+                        type="number"
+                        value={settings.timerSeconds}
+                        onChange={(e) => setSettings({ ...settings, timerSeconds: Math.max(1, parseInt(e.target.value) || 15) })}
+                        className="w-20 px-2 py-1 rounded bg-slate-700 border border-slate-600"
+                        min="1"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="border-t border-slate-600 pt-4">
+                <h3 className="text-lg font-semibold mb-3">Background</h3>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Background Image:</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBackgroundUpload}
+                      disabled={uploading}
+                      className="text-sm"
+                    />
+                    {uploading && <span className="ml-2 text-sm text-gray-400">Uploading...</span>}
+                    {settings.backgroundUrl && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <img src={settings.backgroundUrl} alt="Background" className="h-20 rounded" />
+                        <button
+                          onClick={() => setSettings({ ...settings, backgroundUrl: '' })}
+                          className="text-red-400 hover:text-red-300 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -163,6 +255,7 @@ export default function EditorPage() {
                   key={slice.id}
                   slice={slice}
                   index={i}
+                  settings={settings}
                   onChange={(patch) => {
                     const newSlices = [...settings.slices];
                     newSlices[i] = { ...slice, ...patch };
@@ -171,7 +264,6 @@ export default function EditorPage() {
                   onRemove={() => {
                     setSettings({ ...settings, slices: settings.slices.filter((_, idx) => idx !== i) });
                   }}
-                  adminPassword={adminPassword}
                 />
               ))}
             </div>
@@ -187,6 +279,17 @@ export default function EditorPage() {
           </div>
         )}
       </div>
+
+      {showNameModal && (
+        <InputModal
+          isOpen={true}
+          onClose={() => setShowNameModal(false)}
+          onSubmit={handleNameSubmit}
+          title="Name Your Spinner"
+          placeholder="Enter spinner name"
+          defaultValue="New Spin Game"
+        />
+      )}
     </div>
   );
 }

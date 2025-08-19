@@ -35,8 +35,8 @@ export const UrlModal: React.FC<UrlModalProps> = ({ isOpen, onClose, url }) => {
           </button>
         </div>
         
-        <div className="bg-gray-100 p-3 rounded-md mb-4 break-all">
-          <code className="text-sm">{url}</code>
+        <div className="bg-gray-800 p-3 rounded-md mb-4 break-all">
+          <code className="text-sm text-gray-200">{url}</code>
         </div>
         
         <div className="flex gap-2">

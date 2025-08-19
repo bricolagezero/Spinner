@@ -35,10 +35,10 @@ export default function WheelPanel({
   const [showModal, setShowModal] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
 
-  // responsive size
-  const [size, setSize] = useState(600);
+  // responsive size - make it smaller
+  const [size, setSize] = useState(500);
   useEffect(() => {
-    const onResize = () => setSize(Math.max(480, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.8)));
+    const onResize = () => setSize(Math.max(400, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.65)));
     onResize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -161,23 +161,46 @@ export default function WheelPanel({
     return `M${cx},${cy} L${x0},${y0} A${radius},${radius} 0 0,1 ${x1},${y1} Z`;
   };
 
+  // Helper to wrap text for slices
+  const wrapText = (text: string, maxWidth: number) => {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+    
+    words.forEach(word => {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      if (testLine.length > maxWidth / 10) { // Rough estimate
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    });
+    
+    if (currentLine) lines.push(currentLine);
+    return lines;
+  };
+
   return (
     <div className="relative flex items-center justify-center">
-      {/* right-side SPIN */}
-      <button
+      {/* left-side SPIN button */}
+      <motion.button
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
         onClick={spin}
         disabled={spinning || (!settings.allowRepeats && activeSlices.length === 0)}
-        className={`absolute -right-6 md:-right-12 lg:-right-20 top-1/2 -translate-y-1/2
-                    w-28 h-28 lg:w-36 lg:h-36 rounded-full grid place-items-center
-                    text-black font-extrabold text-base lg:text-lg
+        className={`absolute -left-24 md:-left-32 top-1/2 -translate-y-1/2
+                    w-24 h-24 md:w-28 md:h-28 rounded-full grid place-items-center
+                    text-black font-extrabold text-sm md:text-base
                     shadow-[0_0_35px_rgba(255,255,0,0.7)] border-4 border-yellow-200
                     transition-all duration-300
                     ${spinning ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-400 hover:bg-yellow-300 hover:scale-105"}`}
         aria-label="Spin" title="Spin"
       >
-        <div className="text-3xl lg:text-4xl">⟳</div>
+        <div className="text-2xl md:text-3xl">⟳</div>
         <div>SPIN</div>
-      </button>
+      </motion.button>
 
       {/* pointer (flipped + shadow) */}
       <div
@@ -213,31 +236,43 @@ export default function WheelPanel({
             />
           ))}
 
-          {/* labels rotate with wheel; winner snaps horizontal */}
+          {/* labels with text wrapping */}
           {settings.slices.map((s, i) => {
             const angle = i * sliceAngle + sliceAngle / 2;
-            const rL = radius * 0.72;
+            const rL = radius * 0.65;
             const rad = (angle * Math.PI) / 180;
             const rx = cx + rL * Math.sin(rad);
             const ry = cy - rL * Math.cos(rad);
             const isWinner = resultIndex === i && !spinning;
             const counter = isWinner ? -rotationResidual : 0;
+            
+            const fontSize = Math.max(10, Math.floor(size / 35));
+            const lines = wrapText(s.label, sliceAngle * 2);
+            
             return (
-              <g key={`${s.id}-label`}>
+              <motion.g 
+                key={`${s.id}-label`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 + i * 0.05 }}
+              >
                 <g transform={`translate(${rx},${ry}) rotate(${counter}) translate(${-rx},${-ry})`}>
-                  <text
-                    x={rx}
-                    y={ry}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize={Math.max(12, Math.floor(size / 30))}
-                    fill="#fff"
-                    className={isWinner ? "font-bold drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] transition-transform duration-200 ease-out" : "drop-shadow-sm"}
-                  >
-                    {s.label}
-                  </text>
+                  {lines.map((line, lineIndex) => (
+                    <text
+                      key={lineIndex}
+                      x={rx}
+                      y={ry + (lineIndex - (lines.length - 1) / 2) * fontSize * 1.2}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={fontSize}
+                      fill="#fff"
+                      className={isWinner ? "font-bold drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] transition-transform duration-200 ease-out" : "drop-shadow-sm"}
+                    >
+                      {line}
+                    </text>
+                  ))}
                 </g>
-              </g>
+              </motion.g>
             );
           })}
 

@@ -130,6 +130,19 @@ try {
     json_ok(['slug' => $newSlug]);
   }
 
+  // DELETE /games/{slug}
+  if ($method === 'DELETE' && count($parts) === 2 && $parts[0] === 'games') {
+    require_admin();
+    $slug = $parts[1];
+    $file = game_path($slug);
+    if (!is_file($file)) json_err(404, 'Not found');
+    
+    if (!@unlink($file)) {
+      json_err(500, 'Delete failed');
+    }
+    json_ok(['ok' => true]);
+  }
+
   json_err(404, 'Route not found');
 
 } catch (Throwable $e) {

@@ -46,9 +46,9 @@ export default function PreviewModal({ settings }: { settings: GameSettings }) {
                     </div>
                   </div>
                   {local.footer && (
-                    <div className="pt-2">
-                      <div className="rounded-t-2xl bg-black/30 backdrop-blur-md text-center text-sm opacity-90 py-2">
-                        {local.footer}
+                    <div className="mt-4">
+                      <div className="rounded-xl bg-black/30 backdrop-blur-md px-4 py-2 inline-block">
+                        <p className="text-sm opacity-90 m-0">{local.footer}</p>
                       </div>
                     </div>
                   )}
