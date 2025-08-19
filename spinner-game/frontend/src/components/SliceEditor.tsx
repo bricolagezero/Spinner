@@ -76,13 +76,21 @@ export default function SliceEditor({
           }/>
           {pctIcon > 0 && <div className="h-2 w-24 bg-slate-200 rounded overflow-hidden"><div className="h-2 bg-blue-500" style={{ width: `${pctIcon}%` }} /></div>}
           {slice.iconUrl && (
-            <img 
-              src={slice.iconUrl} 
-              className="h-8 w-8 object-contain rounded cursor-pointer hover:scale-110 transition-transform" 
-              alt="icon"
-              onClick={() => window.open(slice.iconUrl, '_blank')}
-              title="Click to view full size"
-            />
+            <>
+              <img 
+                src={slice.iconUrl} 
+                className="h-8 w-8 object-contain rounded cursor-pointer hover:scale-110 transition-transform" 
+                alt="icon"
+                onClick={() => window.open(slice.iconUrl, '_blank')}
+                title="Click to view full size"
+              />
+              <button
+                onClick={() => onChange({ iconUrl: '' })}
+                className="text-red-500 hover:text-red-700 text-xs"
+              >
+                Remove
+              </button>
+            </>
           )}
         </div>
 
@@ -97,13 +105,21 @@ export default function SliceEditor({
             }/>
             {pctOut > 0 && <div className="h-2 w-24 bg-slate-200 rounded overflow-hidden"><div className="h-2 bg-green-500" style={{ width: `${pctOut}%` }} /></div>}
             {slice.outcomeImageUrl && (
-              <img 
-                src={slice.outcomeImageUrl} 
-                className="h-12 w-12 object-cover rounded cursor-pointer hover:scale-110 transition-transform" 
-                alt="outcome"
-                onClick={() => window.open(slice.outcomeImageUrl, '_blank')}
-                title="Click to view full size"
-              />
+              <>
+                <img 
+                  src={slice.outcomeImageUrl} 
+                  className="h-12 w-12 object-cover rounded cursor-pointer hover:scale-110 transition-transform" 
+                  alt="outcome"
+                  onClick={() => window.open(slice.outcomeImageUrl, '_blank')}
+                  title="Click to view full size"
+                />
+                <button
+                  onClick={() => onChange({ outcomeImageUrl: '' })}
+                  className="text-red-500 hover:text-red-700 text-xs"
+                >
+                  Remove
+                </button>
+              </>
             )}
           </div>
         </div>

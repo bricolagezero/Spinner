@@ -223,15 +223,27 @@ export default function EditorPage() {
                   </label>
                   
                   {settings.timerEnabled && (
-                    <div className="ml-7 flex items-center gap-2">
-                      <label className="text-sm">Timer seconds:</label>
-                      <input
-                        type="number"
-                        value={settings.timerSeconds}
-                        onChange={(e) => setSettings({ ...settings, timerSeconds: Math.max(1, parseInt(e.target.value) || 15) })}
-                        className="w-20 px-2 py-1 rounded bg-slate-700 border border-slate-600"
-                        min="1"
-                      />
+                    <div className="ml-7 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm">Minutes:</label>
+                        <input
+                          type="number"
+                          value={settings.timerMinutes || 0}
+                          onChange={(e) => setSettings({ ...settings, timerMinutes: Math.max(0, parseInt(e.target.value) || 0) })}
+                          className="w-20 px-2 py-1 rounded bg-slate-700 border border-slate-600"
+                          min="0"
+                          max="59"
+                        />
+                        <label className="text-sm">Seconds:</label>
+                        <input
+                          type="number"
+                          value={settings.timerSeconds || 0}
+                          onChange={(e) => setSettings({ ...settings, timerSeconds: Math.max(0, Math.min(59, parseInt(e.target.value) || 0)) })}
+                          className="w-20 px-2 py-1 rounded bg-slate-700 border border-slate-600"
+                          min="0"
+                          max="59"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>

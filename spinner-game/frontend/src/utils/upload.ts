@@ -2,7 +2,7 @@
 export function uploadFile(
   url: string,
   file: File,
-  opts?: { onProgress?: (pct: number) => void; adminPassword?: string }
+  opts?: { onProgress?: (pct: number) => void }
 ): Promise<{ url: string }> {
   return new Promise((resolve, reject) => {
     const fd = new FormData();
@@ -10,9 +10,7 @@ export function uploadFile(
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
-    // Make sure header name matches exactly what PHP expects
-    if (opts?.adminPassword) xhr.setRequestHeader("X-Admin-Pass", opts.adminPassword);
-    xhr.withCredentials = true;
+    xhr.withCredentials = true; // Use session cookies
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && opts?.onProgress) opts.onProgress(Math.round((e.loaded / e.total) * 100));
@@ -30,5 +28,7 @@ export function uploadFile(
     };
 
     xhr.send(fd);
+  });
+}
   });
 }

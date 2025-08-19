@@ -26,5 +26,6 @@ export type GameSettings = {
   allowRepeats: boolean;
   timerEnabled: boolean;
   timerSeconds: number;
+  timerMinutes: number;
   slices: Slice[];
 };

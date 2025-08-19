@@ -5,14 +5,16 @@
 
 /* Custom global styles */
 @layer base {
+  * {
+    font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', Inter, Arial, sans-serif !important;
+  }
+  
   html {
     @apply h-full;
-    font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', Inter, Arial, sans-serif;
   }
   
   body {
     @apply h-full m-0 bg-slate-900 text-white;
-    font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', Inter, Arial, sans-serif;
   }
   
   #root {
@@ -21,7 +23,6 @@
   
   button {
     @apply cursor-pointer transition-colors;
-    font-family: 'Roboto', sans-serif;
   }
 }
 

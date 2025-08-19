@@ -42,6 +42,7 @@ export function defaultSettings(customTitle?: string): GameSettings {
     allowRepeats: true,
     timerEnabled: false,
     timerSeconds: 15,
+    timerMinutes: 0,
     slices,
   };
 }

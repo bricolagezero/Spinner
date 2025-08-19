@@ -114,7 +114,10 @@ export default function WheelPanel({
       if (!spinning) return;
       setSpinning(false);
       setShowModal(true);
-      if (settings.timerEnabled) setCountdown(settings.timerSeconds);
+      if (settings.timerEnabled) {
+        const totalSeconds = (settings.timerMinutes || 0) * 60 + (settings.timerSeconds || 0);
+        setCountdown(totalSeconds);
+      }
       if (!settings.allowRepeats && resultIndex != null) {
         const next = settings.slices.map((s, i) => (i === resultIndex ? { ...s, disabled: true } : s));
         setSettings({ ...settings, slices: next });
@@ -143,7 +146,7 @@ export default function WheelPanel({
     };
     el.addEventListener("transitionend", onEnd);
     return () => el.removeEventListener("transitionend", onEnd);
-  }, [spinning, resultIndex, settings]);
+  }, [spinning, resultIndex, settings, setSettings]);
 
   useEffect(() => {
     if (countdown == null || countdown <= 0) return;
@@ -216,17 +219,17 @@ export default function WheelPanel({
         <div>SPIN</div>
       </motion.button>
 
-      {/* pointer (flipped + shadow) */}
+      {/* pointer (larger and centered) */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 -top-8 z-20"
+        className="absolute left-1/2 -translate-x-1/2 -top-12 z-20"
         style={{
           width: 0,
           height: 0,
-          borderLeft: "16px solid transparent",
-          borderRight: "16px solid transparent",
-          borderBottom: "28px solid rgba(255,255,255,0.98)",
-          filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.4))",
-          transform: "rotate(180deg) translateX(-50%)",
+          borderLeft: "24px solid transparent",
+          borderRight: "24px solid transparent",
+          borderBottom: "40px solid rgba(255,255,255,0.98)",
+          filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.6))",
+          transform: "translateX(-50%) rotate(180deg)",
         }}
       />
 
@@ -278,8 +281,8 @@ export default function WheelPanel({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 + i * 0.05 }}
               >
-                {/* Icon */}
-                {s.iconUrl && (
+                {/* Icon or Number */}
+                {s.iconUrl ? (
                   <g transform={`translate(${iconX},${iconY}) rotate(${counter}) translate(${-iconX},${-iconY})`}>
                     <image
                       href={s.iconUrl}
@@ -289,6 +292,21 @@ export default function WheelPanel({
                       height="40"
                       preserveAspectRatio="xMidYMid meet"
                     />
+                  </g>
+                ) : (
+                  <g transform={`translate(${iconX},${iconY}) rotate(${counter}) translate(${-iconX},${-iconY})`}>
+                    <text
+                      x={iconX}
+                      y={iconY}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={Math.floor(size / 25)}
+                      fill="#fff"
+                      opacity="0.5"
+                      style={{ fontFamily: 'Roboto, sans-serif', fontWeight: 'bold' }}
+                    >
+                      {String(i + 1).padStart(2, '0')}
+                    </text>
                   </g>
                 )}
                 
@@ -342,6 +360,13 @@ export default function WheelPanel({
               
               {/* Content */}
               <div className="relative bg-white text-black rounded-2xl p-6 md:p-8 max-w-[80vw] max-h-[80vh] w-full max-w-2xl flex flex-col items-center overflow-auto shadow-2xl">
+                {settings.timerEnabled && countdown != null && (
+                  <div className="absolute -top-24 left-1/2 -translate-x-1/2">
+                    <div className="bg-black/80 backdrop-blur-md rounded-2xl px-6 py-3 text-white font-bold text-2xl shadow-[0_0_30px_rgba(255,255,255,0.3)] animate-pulse" style={{ fontFamily: 'Roboto, sans-serif' }}>
+                      {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
+                    </div>
+                  </div>
+                )}
                 <h2 className="text-3xl font-bold mb-4 text-center" style={{ fontFamily: 'Roboto, sans-serif' }}>{current.label}</h2>
                 {current.outcomeImageUrl && (
                   <img
@@ -356,22 +381,6 @@ export default function WheelPanel({
                   <p className="mb-4 text-center" style={{ fontSize: current.outcomeFontSize ?? 20, fontFamily: 'Roboto, sans-serif' }}>
                     {current.outcomeText}
                   </p>
-                )}
-                {settings.timerEnabled && countdown != null && (
-                  <div className="relative mt-2">
-                    <div className="relative w-24 h-24 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-3xl font-bold text-white shadow-[0_0_30px_rgba(255,255,255,0.2)] animate-pulse">
-                      {countdown}
-                      <svg className="absolute inset-0" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="6" />
-                        <circle
-                          cx="50" cy="50" r="46" fill="none" stroke="white" strokeWidth="6"
-                          strokeDasharray="289"
-                          strokeDashoffset={(1 - countdown / settings.timerSeconds) * 289}
-                          className="transition-all duration-1000"
-                        />
-                      </svg>
-                    </div>
-                  </div>
                 )}
                 <button 
                   onClick={() => setShowModal(false)} 
