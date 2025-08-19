@@ -10,6 +10,8 @@ export default function ViewerPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [settings, setSettings] = useState<GameSettings | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [timerActive, setTimerActive] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -27,6 +29,12 @@ export default function ViewerPage() {
     })();
   }, [slug]);
 
+  useEffect(() => {
+    if (!timerActive || timeLeft === null || timeLeft <= 0) return;
+    const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [timeLeft, timerActive]);
+
   if (loading) return <div className="min-h-screen flex justify-center items-center">Loading…</div>;
   if (err) return <div className="min-h-screen flex justify-center items-center text-red-500">{err}</div>;
   if (!settings) return null;
@@ -41,7 +49,17 @@ export default function ViewerPage() {
 
   return (
     <div className="min-h-screen flex bg-slate-900" style={bgStyle}>
-      <div className="flex-1 p-6 md:p-8 lg:p-12 flex">
+      <div className="flex-1 p-6 md:p-8 lg:p-12 flex relative">
+        {/* Countdown Timer */}
+        {settings.timerEnabled && timerActive && timeLeft !== null && (
+          <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 z-20">
+            <div className="text-white text-2xl font-mono">
+              {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:
+              {String(timeLeft % 60).padStart(2, '0')}
+            </div>
+          </div>
+        )}
+
         <div className="flex-1 flex flex-col">
           {/* Header in top left */}
           <motion.div 
@@ -65,7 +83,19 @@ export default function ViewerPage() {
           
           {/* Wheel in center */}
           <div className="flex-1 flex items-center justify-center">
-            <WheelPanel settings={settings} setSettings={setSettings as any} sleekMode={true} />
+            <WheelPanel 
+              settings={settings} 
+              setSettings={setSettings as any} 
+              sleekMode={true}
+              onSpinStart={() => {
+                if (settings.timerEnabled) {
+                  const totalSeconds = (settings.timerMinutes || 0) * 60 + (settings.timerSeconds || 0);
+                  setTimeLeft(totalSeconds);
+                  setTimerActive(true);
+                }
+              }}
+              onSpinEnd={() => setTimerActive(false)}
+            />
           </div>
           
           {/* Footer */}

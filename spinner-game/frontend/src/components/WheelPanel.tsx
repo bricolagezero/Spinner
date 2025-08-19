@@ -85,9 +85,13 @@ export default function WheelPanel({
     if (spinning) return;
     if ((!settings.allowRepeats && activeSlices.length === 0) || settings.slices.length === 0) return;
     const idx = pickIndex();
-    const targetCenter = idx * sliceAngle + sliceAngle / 2;
+    
+    // Calculate rotation so winning slice appears at top (12 o'clock position)
+    // The pointer is at the top, so we need to rotate the wheel so the winning slice ends up there
+    const targetAngle = -idx * sliceAngle; // Negative because wheel rotates clockwise
     const spins = 6 + Math.floor(Math.random() * 3);
-    const finalRotation = spins * 360 + (360 - targetCenter);
+    const finalRotation = spins * 360 + targetAngle;
+    
     setSpinning(true);
     setResultIndex(idx);
     setCountdown(null);
@@ -113,16 +117,21 @@ export default function WheelPanel({
     const onEnd = () => {
       if (!spinning) return;
       setSpinning(false);
-      setShowModal(true);
-      if (settings.timerEnabled) {
-        const totalSeconds = (settings.timerMinutes || 0) * 60 + (settings.timerSeconds || 0);
-        setCountdown(totalSeconds);
-      }
-      if (!settings.allowRepeats && resultIndex != null) {
-        const next = settings.slices.map((s, i) => (i === resultIndex ? { ...s, disabled: true } : s));
-        setSettings({ ...settings, slices: next });
-      }
-      // quick confetti
+      
+      // Add 1-second delay before showing modal
+      setTimeout(() => {
+        setShowModal(true);
+        if (settings.timerEnabled) {
+          const totalSeconds = (settings.timerMinutes || 0) * 60 + (settings.timerSeconds || 0);
+          setCountdown(totalSeconds);
+        }
+        if (!settings.allowRepeats && resultIndex != null) {
+          const next = settings.slices.map((s, i) => (i === resultIndex ? { ...s, disabled: true } : s));
+          setSettings({ ...settings, slices: next });
+        }
+      }, 1000);
+      
+      // Confetti effect
       const root = document.createElement("div");
       root.style.position = "fixed"; root.style.inset = "0"; root.style.pointerEvents = "none";
       document.body.appendChild(root);
@@ -359,9 +368,9 @@ export default function WheelPanel({
               </div>
               
               {/* Content */}
-              <div className="relative bg-white text-black rounded-2xl p-6 md:p-8 max-w-[80vw] max-h-[80vh] w-full max-w-2xl flex flex-col items-center overflow-auto shadow-2xl">
+              <div className="relative bg-white text-black rounded-2xl p-6 md:p-8 w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh] flex flex-col items-center overflow-auto shadow-2xl">
                 {settings.timerEnabled && countdown != null && (
-                  <div className="absolute -top-24 left-1/2 -translate-x-1/2">
+                  <div className="absolute -top-16 left-1/2 -translate-x-1/2">
                     <div className="bg-black/80 backdrop-blur-md rounded-2xl px-6 py-3 text-white font-bold text-2xl shadow-[0_0_30px_rgba(255,255,255,0.3)] animate-pulse" style={{ fontFamily: 'Roboto, sans-serif' }}>
                       {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
                     </div>
