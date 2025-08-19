@@ -116,7 +116,7 @@ export default function WheelPanel({
     requestAnimationFrame(() => setRotation((r) => r + finalRotation));
   };
 
-  const wheelRef = useRef<HTMLDivElement>(null);
+  const wheelRef = useRef<SVGGElement>(null);
   const wheelStyle: React.CSSProperties = {
     width: size,
     height: size,
@@ -248,11 +248,11 @@ export default function WheelPanel({
       {/* Main content wrapper */}
       <div className="flex-grow">
         {/* Background image - responsive without cutting off buttons */}
-        {settings.backgroundMode === 'image' && settings.backgroundImageUrl && (
+        {settings.backgroundMode === 'image' && settings.backgroundUrl && (
           <div className="w-full flex justify-center mb-4">
             <div className="w-full max-w-4xl" style={{ maxHeight: 'calc(100vh - 250px)' }}>
               <img 
-                src={settings.backgroundImageUrl} 
+                src={settings.backgroundUrl} 
                 alt="Wheel background"
                 className="w-full h-full object-contain"
                 style={{ maxWidth: '100%', height: 'auto' }}
