@@ -143,6 +143,8 @@ export default function WheelPanel({
         if (settings.timerEnabled) {
           const totalSeconds = (settings.timerMinutes || 0) * 60 + (settings.timerSeconds || 0);
           setCountdown(totalSeconds);
+        } // <-- close the timerEnabled block
+
         // Set per-slice timer if available
         if (resultIndex != null && settings.slices[resultIndex].timerSeconds) {
           setSliceCountdown(settings.slices[resultIndex].timerSeconds);
