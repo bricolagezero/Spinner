@@ -65,7 +65,7 @@ export default function ViewerPage() {
             transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
             className="mb-4"
           >
-            <div className="rounded-2xl bg-black/50 px-4 py-3 w-full md:w-1/2">
+            <div className="rounded-2xl bg-black/50 px-4 py-3 w-full md:w-[30%]">
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-1 drop-shadow-lg break-words">{settings.title}</h1>
               {settings.subtitle && (
                 <motion.p
