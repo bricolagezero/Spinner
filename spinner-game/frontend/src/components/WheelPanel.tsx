@@ -50,16 +50,19 @@ export default function WheelPanel({
   const [size, setSize] = useState(500);
   useEffect(() => {
     const compute = () => {
-      // If embedded (sleekMode), size to parent container to avoid overflow/scroll
       if (sleekMode && containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        // use smaller margins to maximize wheel area, but keep triangle space
-        const triangleSpace = 50;
-        const max = Math.min(rect.width - 20, rect.height - triangleSpace - 20);
-        setSize(Math.max(360, Math.floor(max)));
+        // Reserve space for the pointer above and side controls (Spin/Spins Left)
+        const topOutset = 60;      // triangle pointer
+        const bottomOutset = 16;   // small padding
+        const sideOutset = 96;     // each side ~80-96px for controls
+        const availW = Math.max(200, rect.width - sideOutset * 2);
+        const availH = Math.max(200, rect.height - topOutset - bottomOutset);
+        const s = Math.min(availW, availH);
+        setSize(Math.max(420, Math.floor(s)));
       } else {
-        // Slightly smaller default factor to reduce overflow in full-screen mode
-        setSize(Math.max(340, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.75)));
+        // Slightly larger fallback for full-screen use
+        setSize(Math.max(380, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.8)));
       }
     };
     compute();
@@ -302,11 +305,11 @@ export default function WheelPanel({
       ref={containerRef}
       className={`${sleekMode ? "h-full" : "min-h-screen"} p-4 flex flex-col relative`}
     >
-      {/* Background image - render only when not in sleekMode to avoid covering page headers */}
-      {!sleekMode && settings.backgroundMode === 'image' && settings.backgroundUrl && (
+      {/* Background image - scoped to this panel so it shows in Viewer too */}
+      {settings.backgroundMode === 'image' && settings.backgroundUrl && (
         <div
-          className="fixed inset-0 flex justify-center items-center pointer-events-none"
-          style={{ zIndex: -1 }}
+          className="absolute inset-0 flex justify-center items-center pointer-events-none"
+          style={{ zIndex: 0 }}
         >
           <img src={settings.backgroundUrl} alt="" className="w-full h-full object-cover" />
         </div>
@@ -468,8 +471,11 @@ export default function WheelPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* Animated gradient border wrapper (5px) */}
-            <div className="relative w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh]">
+            {/* Animated gradient border wrapper (stroke only) */}
+            <div
+              className="relative w-[90vw] max-w-[1200px]"
+              style={{ height: "min(90vh, calc(100dvh - 32px))" }}
+            >
               {/* Gradient border ring layer (only the stroke rotates) */}
               <div
                 className="absolute inset-0 rounded-3xl pointer-events-none animate-spin-slower"
@@ -489,76 +495,80 @@ export default function WheelPanel({
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="absolute inset-[5px] bg-white/50 backdrop-blur-md rounded-2xl p-4 md:p-6 overflow-hidden shadow-2xl"
+                className="absolute inset-[5px] bg-white/80 backdrop-blur-md rounded-2xl p-4 md:p-6 overflow-hidden shadow-2xl"
               >
-                <div className="w/[90%] h/[90%] mx-auto flex flex-col items-center justify-start gap-4">
-                  {/* Timers */}
-                  {settings.timerEnabled && countdown != null && (
-                    <div className="text-base md:text-lg font-semibold text-center text-black">
-                      Global Timer: {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
-                    </div>
-                  )}
-
-                  {current.timerSeconds && sliceCountdown != null && sliceCountdown > 0 && (
-                    <div className="text-base md:text-lg font-semibold text-center text-purple-600">
-                      Slice Timer: {Math.floor(sliceCountdown / 60)}:{String(sliceCountdown % 60).padStart(2, '0')}
-                    </div>
-                  )}
-
-                  {/* Title pill: dark background, white text, slides in after 1s */}
-                  <motion.div
-                    initial={{ y: -24, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 1 }}
-                    className="px-4 py-2 rounded-full bg-slate-900/85 text-white shadow-lg"
-                  >
-                    <h2 className="m-0 text-2xl md:text-3xl font-bold text-center">
-                      {current.label}
-                    </h2>
-                  </motion.div>
-
-                  {current.outcomeImageUrl && (
-                    <div className="flex-1 w-full flex items-center justify-center">
-                      <img
-                        src={current.outcomeImageUrl}
-                        className="rounded-lg shadow-lg max-w-full max-h-full object-contain animate-float-slow"
-                        style={{ transform: `scale(${current.outcomeImageScale ?? 1})` }}
-                        alt=""
-                      />
-                    </div>
-                  )}
-
-                  {current.outcomeText && (
-                    <div className="w-full flex-1 flex items-center justify-center">
-                      <p className="text-center text-black w-full" style={{ fontSize: current.outcomeFontSize ?? 16 }}>
-                        {current.outcomeText}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Button based on spinsLeft (last slice => Close -> show completion) */}
-                  {spinsLeft === 0 ? (
-                    <button
-                      onClick={() => {
-                        setShowModal(false);
-                        setShowCompletionModal(true);
-                      }}
-                      className="mt-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold shadow"
+                {/* Use full height, pin header/footer, scroll the middle */}
+                <div className="h-full w-full mx-auto flex flex-col gap-4 overflow-hidden">
+                  {/* Header: timers + title pill (pinned) */}
+                  <div className="shrink-0 flex flex-col items-center gap-2">
+                    {settings.timerEnabled && countdown != null && (
+                      <div className="text-base md:text-lg font-semibold text-center text-black">
+                        Global Timer: {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
+                      </div>
+                    )}
+                    {current.timerSeconds && sliceCountdown != null && sliceCountdown > 0 && (
+                      <div className="text-base md:text-lg font-semibold text-center text-purple-600">
+                        Slice Timer: {Math.floor(sliceCountdown / 60)}:{String(sliceCountdown % 60).padStart(2, '0')}
+                      </div>
+                    )}
+                    <motion.div
+                      initial={{ y: -24, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ duration: 0.5, delay: 1 }}
+                      className="px-4 py-2 rounded-full bg-slate-900/85 text-white shadow-lg"
                     >
-                      Close
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setShowModal(false);
-                        setSliceCountdown(null);
-                        spin();
-                      }}
-                      className="mt-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold shadow"
-                    >
-                      Spin Again
-                    </button>
-                  )}
+                      <h2 className="m-0 text-2xl md:text-3xl font-bold text-center">
+                        {current.label}
+                      </h2>
+                    </motion.div>
+                  </div>
+
+                  {/* Middle: scrollable content area */}
+                  <div className="flex-1 overflow-auto w-full flex flex-col items-center justify-start gap-4">
+                    {current.outcomeImageUrl && (
+                      <div className="w-full flex items-center justify-center">
+                        <img
+                          src={current.outcomeImageUrl}
+                          className="rounded-lg shadow-lg max-w-full max-h-full object-contain animate-float-slow"
+                          style={{ transform: `scale(${current.outcomeImageScale ?? 1})` }}
+                          alt=""
+                        />
+                      </div>
+                    )}
+                    {current.outcomeText && (
+                      <div className="w-full flex items-center justify-center">
+                        <p className="text-center text-black w-full" style={{ fontSize: current.outcomeFontSize ?? 16 }}>
+                          {current.outcomeText}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer: action buttons (pinned) */}
+                  <div className="shrink-0 flex items-center justify-center">
+                    {spinsLeft === 0 ? (
+                      <button
+                        onClick={() => {
+                          setShowModal(false);
+                          setShowCompletionModal(true);
+                        }}
+                        className="mt-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold shadow"
+                      >
+                        Close
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setShowModal(false);
+                          setSliceCountdown(null);
+                          spin();
+                        }}
+                        className="mt-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold shadow"
+                      >
+                        Spin Again
+                      </button>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             </div>

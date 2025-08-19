@@ -95,9 +95,11 @@ export default function ViewerPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-3 bg-black/50 backdrop-blur-sm rounded-lg z-20"
+              className="fixed bottom-4 inset-x-0 z-20 flex justify-center px-4"
             >
-              <p className="m-0 text-sm opacity-90 text-center">{settings.footer}</p>
+              <div className="px-4 py-3 bg-black/50 backdrop-blur-sm rounded-lg">
+                <p className="m-0 text-sm opacity-90 text-center">{settings.footer}</p>
+              </div>
             </motion.div>
           )}
         </div>
