@@ -38,15 +38,15 @@ export default function WheelPanel({
   const [resultIndex, setResultIndex] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [showCompletion, setShowCompletion] = useState(false);
   const [sliceCountdown, setSliceCountdown] = useState<number | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [viewedSlices, setViewedSlices] = useState<string[]>([]);
 
-  // responsive size - make it smaller
+  // responsive size - bigger wheel, still safe on small screens
   const [size, setSize] = useState(500);
   useEffect(() => {
-    const onResize = () => setSize(Math.max(400, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.65)));
+    const onResize = () =>
+      setSize(Math.max(360, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.8)));
     onResize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -122,6 +122,7 @@ export default function WheelPanel({
     transition: spinning ? "transform 3.8s cubic-bezier(0.17,0.67,0.32,1.29)" : "none",
     transformOrigin: "center",
     transformBox: "fill-box",
+    willChange: "transform",
   };
 
   // normalize residual rotation [0..360)
@@ -200,17 +201,9 @@ export default function WheelPanel({
 
   const current = resultIndex != null ? settings.slices[resultIndex] : null;
 
-  // Check if all slices are disabled (activity complete)
-  useEffect(() => {
-    if (!settings.allowRepeats && settings.slices.length > 0 && settings.slices.every(s => s.disabled)) {
-      setShowCompletion(true);
-    }
-  }, [settings.slices, settings.allowRepeats]);
-
   const handleRestart = () => {
     const resetSlices = settings.slices.map(s => ({ ...s, disabled: false }));
     setSettings({ ...settings, slices: resetSlices });
-    setShowCompletion(false);
     setViewedSlices([]);
   };
 
@@ -223,33 +216,33 @@ export default function WheelPanel({
     return `M${cx},${cy} L${x0},${y0} A${radius},${radius} 0 0,1 ${x1},${y1} Z`;
   };
 
-  // Replace simple wrapper with a controlled two-line wrapper based on arc width
-  const wrapToLines = (text: string, charsPerLine: number, maxLines = 2) => {
-    const words = text.split(/\s+/);
-    const lines: string[] = [];
+  // Helper: wrap text into lines with a chars-per-line cap (no ellipsis)
+  const wrapIntoLines = (text: string, charsPerLine: number) => {
+    const words = text.trim().split(/\s+/);
+    const out: string[] = [];
     let line = "";
     for (const w of words) {
-      const candidate = line ? `${line} ${w}` : w;
-      if (candidate.length > charsPerLine) {
-        if (line) lines.push(line);
+      const cand = line ? `${line} ${w}` : w;
+      if (cand.length > charsPerLine) {
+        if (line) out.push(line);
         line = w;
-        if (lines.length === maxLines - 1) break;
       } else {
-        line = candidate;
+        line = cand;
       }
     }
-    if (lines.length < maxLines && line) lines.push(line);
-    // If overflow, append remainder to last line with ellipsis
-    if (lines.length === maxLines) {
-      const used = lines.join(" ").length;
-      const remainder = text.slice(used).trim();
-      if (remainder) lines[maxLines - 1] = lines[maxLines - 1].replace(/\s+$/, "") + "…";
-    }
-    return lines;
+    if (line) out.push(line);
+    return out;
   };
 
+  // Derived: how many spins remain (drives counter, last-modal button, completion)
+  const spinsLeft = Math.max(
+    0,
+    settings.slices.length -
+      (settings.allowRepeats ? viewedSlices.length : settings.slices.filter((s) => s.disabled).length)
+  );
+
   return (
-    <div className="min-h-screen p-4 flex flex-col relative">
+    <div className="h-screen overflow-hidden p-4 flex flex-col relative">
       {/* Background image - fixed behind everything, non-interactive */}
       {settings.backgroundMode === 'image' && settings.backgroundUrl && (
         <div
@@ -266,11 +259,39 @@ export default function WheelPanel({
 
       {/* Main content wrapper - positioned above background */}
       <div className="flex-grow relative" style={{ zIndex: 1 }}>
-        {/* Wheel container */}
-        <div className="relative mx-auto wheel-container" style={{ width: size, height: size }}>
-          {/* Triangle indicator - higher z-index */}
+        {/* Wheel container with subtle enter/spin animations */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: spinning ? 1.03 : 1 }}
+          transition={{ type: "spring", stiffness: 160, damping: 18 }}
+          className="relative mx-auto wheel-container"
+          style={{ width: size, height: size, filter: spinning ? "drop-shadow(0 0 30px rgba(99,102,241,0.35))" : "drop-shadow(0 10px 30px rgba(0,0,0,0.5))" }}
+        >
+          {/* Triangle indicator - face downward */}
           <div className="absolute left-1/2 -translate-x-1/2 -top-12 z-40 triangle-indicator">
-            <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[40px] border-b-red-600"></div>
+            <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[40px] border-t-red-600"></div>
+          </div>
+
+          {/* Round Spin button - left side */}
+          <button
+            onClick={spin}
+            disabled={spinning || (!settings.allowRepeats && activeSlices.length === 0)}
+            className={`absolute -left-20 top-1/2 -translate-y-1/2 w-20 h-20 md:w-24 md:h-24 rounded-full grid place-items-center
+              text-black font-extrabold text-sm md:text-base shadow-[0_0_35px_rgba(255,255,0,0.6)] border-4 border-yellow-200
+              transition-all duration-300 ${spinning ? "bg-gray-300 cursor-not-allowed" : "bg-yellow-400 hover:bg-yellow-300 hover:scale-105"}`}
+            aria-label="Spin"
+            title="Spin"
+          >
+            <div className="text-2xl md:text-3xl">⟳</div>
+            <div>SPIN</div>
+          </button>
+
+          {/* Spins Left counter - right side (now uses derived spinsLeft) */}
+          <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-20 md:w-24 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md text-white text-center py-2 shadow-lg">
+            <div className="text-[10px] md:text-xs opacity-80">Spins Left</div>
+            <div className="text-lg md:text-xl font-bold">
+              {spinsLeft}/{settings.slices.length}
+            </div>
           </div>
 
           {/* SVG Wheel */}
@@ -278,24 +299,30 @@ export default function WheelPanel({
             <g ref={wheelRef} style={wheelStyle}>
               {settings.slices.map((slice, i) => {
                 const isViewed = viewedSlices.includes(slice.id);
-                // Dynamic font sizes relative to wheel size
-                const numberFont = Math.max(26, Math.round(size / 14));   // ~36 at size=500
-                const labelFont = Math.max(16, Math.round(size / 23));    // ~22 at size=500
-                const labelLineHeight = Math.round(labelFont * 1.15);
-                const textRing = radius * 0.50; // where labels sit
-                const arc = 2 * Math.PI * textRing * (sliceAngle / 360);
-                const approxCharWidth = labelFont * 0.6;
-                const charsPerLine = Math.max(8, Math.floor(arc / approxCharWidth));
-                const lines = wrapToLines(slice.label, charsPerLine, 2);
+                // Dynamic fit for 2 lines without ellipsis
+                const numberFont = Math.max(26, Math.round(size / 14));
+                const textRing = radius * 0.5;
+                const arc = 2 * Math.PI * textRing * (sliceAngle / 360) * 0.9; // padding on arc
+                let labelFont = Math.max(14, Math.round(size / 22));
+                let lines: string[] = [];
+                for (let t = 0; t < 6; t++) {
+                  const approxCharWidth = labelFont * 0.6;
+                  const charsPerLine = Math.max(6, Math.floor(arc / approxCharWidth));
+                  lines = wrapIntoLines(slice.label, charsPerLine);
+                  if (lines.length <= 2) break;
+                  labelFont = Math.max(12, labelFont - 2);
+                }
+                const labelLineHeight = Math.round(labelFont * 1.12);
 
                 return (
                   <g key={slice.id}>
                     <path
                       d={slicePath(i)}
-                      fill={isViewed ? desaturate(slice.color) : slice.color}
+                      // Light gray instead of transparency when viewed
+                      fill={isViewed ? "#e5e7eb" : slice.color}
                       stroke="#333"
                       strokeWidth="2"
-                      opacity={isViewed ? 0.5 : 1}
+                      opacity={1}
                     />
                     <g transform={`translate(${cx},${cy}) rotate(${i * sliceAngle + sliceAngle / 2})`}>
                       {/* Number at top */}
@@ -310,8 +337,8 @@ export default function WheelPanel({
                       >
                         {i + 1}
                       </text>
-                      {/* Label, up to two lines */}
-                      {lines.map((line, lineIndex) => (
+                      {/* Label - up to 2 lines, fitted */}
+                      {lines.slice(0, 2).map((line, lineIndex) => (
                         <text
                           key={lineIndex}
                           x="0"
@@ -333,136 +360,89 @@ export default function WheelPanel({
             {/* Center cap */}
             <circle cx={cx} cy={cy} r={size * 0.06} fill="white" stroke="#333" strokeWidth="3" />
           </svg>
-        </div>
-
-        {/* Spin button */}
-        <div className="text-center mt-8">
-          <button
-            onClick={spin}
-            disabled={spinning || (!settings.allowRepeats && activeSlices.length === 0)}
-            className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
-            {spinning ? 'Spinning...' : 'Spin the Wheel'}
-          </button>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Slice modal */}
+      {/* Slice modal - 90% viewport, content 90% inside, no scrollbars */}
       <AnimatePresence>
         {showModal && current && (
-          <motion.div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          <motion.div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.5, opacity: 0 }}
-              className="relative bg-white rounded-2xl p-6 md:p-8 max-w-md w-full max-h-[80vh] overflow-y-auto shadow-2xl"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-2xl p-4 md:p-6 w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh] overflow-hidden shadow-2xl"
             >
-              {/* Timers */}
-              {settings.timerEnabled && countdown != null && (
-                <div className="mb-4 text-lg font-semibold text-center">
-                  Global Timer: {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
-                </div>
-              )}
-              
-              {current.timerSeconds && sliceCountdown != null && sliceCountdown > 0 && (
-                <div className="mb-4 text-lg font-semibold text-center text-purple-600">
-                  Slice Timer: {Math.floor(sliceCountdown / 60)}:{String(sliceCountdown % 60).padStart(2, '0')}
-                </div>
-              )}
-              
-              <h2 className="text-2xl font-bold mb-4 text-center">{current.label}</h2>
-              
-              {current.outcomeImageUrl && (
-                <div className="w-full flex justify-center mb-4">
-                  <img 
-                    src={current.outcomeImageUrl}
-                    className="rounded-lg shadow-lg max-w-full h-auto"
-                    style={{ 
-                      maxHeight: '300px',
-                      transform: `scale(${current.outcomeImageScale ?? 1})`
+              <div className="w-[90%] h-[90%] mx-auto flex flex-col items-center justify-start gap-4">
+                {/* Timers */}
+                {settings.timerEnabled && countdown != null && (
+                  <div className="text-base md:text-lg font-semibold text-center text-black">
+                    Global Timer: {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
+                  </div>
+                )}
+
+                {current.timerSeconds && sliceCountdown != null && sliceCountdown > 0 && (
+                  <div className="text-base md:text-lg font-semibold text-center text-purple-600">
+                    Slice Timer: {Math.floor(sliceCountdown / 60)}:{String(sliceCountdown % 60).padStart(2, '0')}
+                  </div>
+                )}
+
+                <h2 className="text-xl md:text-2xl font-bold text-center text-black">{current.label}</h2>
+
+                {current.outcomeImageUrl && (
+                  <div className="flex-1 w-full flex items-center justify-center">
+                    <img
+                      src={current.outcomeImageUrl}
+                      className="rounded-lg shadow-lg max-w-full max-h-full object-contain"
+                      style={{ transform: `scale(${current.outcomeImageScale ?? 1})` }}
+                      alt=""
+                    />
+                  </div>
+                )}
+
+                {current.outcomeText && (
+                  <div className="w-full flex-1 flex items-center justify-center">
+                    <p className="text-center text-black w-full" style={{ fontSize: current.outcomeFontSize ?? 16 }}>
+                      {current.outcomeText}
+                    </p>
+                  </div>
+                )}
+
+                {/* Button based on spinsLeft (last slice => Close -> show completion) */}
+                {spinsLeft === 0 ? (
+                  <button
+                    onClick={() => {
+                      setShowModal(false);
+                      setShowCompletionModal(true);
                     }}
-                    alt=""
-                  />
-                </div>
-              )}
-              
-              {current.outcomeText && (
-                <p className="mb-4 text-center" style={{ fontSize: current.outcomeFontSize ?? 16 }}>
-                  {current.outcomeText}
-                </p>
-              )}
-
-              {/* Button based on whether all slices are viewed */}
-              {viewedSlices.length === settings.slices.length ? (
-                <button
-                  onClick={() => {
-                    setShowModal(false);
-                    setShowCompletionModal(true);
-                  }}
-                  className="mt-4 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full font-semibold"
-                >
-                  Close
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setShowModal(false);
-                    setSliceCountdown(null);
-                    spin();
-                  }}
-                  className="mt-4 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full font-semibold"
-                >
-                  Spin Again
-                </button>
-              )}
+                    className="mt-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold shadow"
+                  >
+                    Close
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setShowModal(false);
+                      setSliceCountdown(null);
+                      spin();
+                    }}
+                    className="mt-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 font-semibold shadow"
+                  >
+                    Spin Again
+                  </button>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Activity Complete Modal */}
-      <AnimatePresence>
-        {showCompletion && (
-          <motion.div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", damping: 10, stiffness: 100 }}
-              className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-3xl p-8 md:p-12 max-w-lg text-center shadow-2xl"
-            >
-              <motion.h2 
-                className="text-4xl md:text-5xl font-bold mb-6"
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              >
-                Activity Complete! 🎉
-              </motion.h2>
-              <p className="text-lg md:text-xl mb-8 opacity-90">
-                Great job! You've completed all the spins.
-              </p>
-              <button 
-                onClick={handleRestart} 
-                className="px-8 py-4 bg-white text-orange-500 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-lg"
-                style={{ fontFamily: 'Roboto, sans-serif' }}
-              >
-                Restart Activity
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Completion Modal - All Slices Viewed */}
+      {/* Completion Modal - All Slices Viewed (triggered after closing last modal) */}
       <AnimatePresence>
         {showCompletionModal && (
           <motion.div 
@@ -484,6 +464,26 @@ export default function WheelPanel({
               >
                 Activity Complete! 🎉
               </motion.h2>
+              <p className="text-lg md:text-xl mb-8 opacity-90">
+                Congratulations! You've viewed all slices.
+              </p>
+              <button 
+                onClick={() => {
+                  setShowCompletionModal(false);
+                  handleRestart();
+                }} 
+                className="px-8 py-4 bg-white text-green-500 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-lg"
+              >
+                Finish
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+}
               <p className="text-lg md:text-xl mb-8 opacity-90">
                 Congratulations! You've viewed all slices.
               </p>

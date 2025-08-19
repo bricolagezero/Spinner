@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { getGame, updateGame, createGame, uploadImage } from "../utils/api";
+import { getGame, updateGame, createGame, uploadImage, login } from "../utils/api";
 import { GameSettings } from "../types";
 import WheelPanel from "../components/WheelPanel";
 import SliceEditor from "../components/SliceEditor";
@@ -8,6 +8,7 @@ import PreviewModal from "../components/PreviewModal";
 import { defaultSettings } from "../utils/defaults";
 import { InputModal } from "../components/InputModal";
 import { extractColorsFromImage } from "../utils/colorExtractor";
+import { LoginModal } from "../components/LoginModal";
 
 export default function EditorPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -20,10 +21,24 @@ export default function EditorPage() {
   const [showNameModal, setShowNameModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [brandedImageUploading, setBrandedImageUploading] = useState(false);
+  const [showLogin, setShowLogin] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleLogin = async (password: string) => {
+    await login(password);
+    setIsAuthenticated(true);
+    setShowLogin(false);
+  };
+
+  useEffect(() => {
+    // Require login each visit
+    setShowLogin(true);
+    setIsAuthenticated(false);
+  }, []);
 
   useEffect(() => {
     (async () => {
-      if (!slug) return;
+      if (!slug || !isAuthenticated) return;
       setLoading(true);
       setErr(null);
       try {
@@ -43,7 +58,7 @@ export default function EditorPage() {
         setLoading(false);
       }
     })();
-  }, [slug]);
+  }, [slug, isAuthenticated]);
 
   async function onSave() {
     if (!settings) return;
@@ -405,6 +420,10 @@ export default function EditorPage() {
           placeholder="Enter spinner name"
           defaultValue="New Spin Game"
         />
+      )}
+
+      {showLogin && !isAuthenticated && (
+        <LoginModal onLogin={handleLogin} />
       )}
     </div>
   );

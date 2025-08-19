@@ -74,7 +74,9 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    load();
+    // Always require login on each visit; don't auto-load here to avoid flicker
+    setShowLogin(true);
+    setIsAuthenticated(false);
   }, []);
 
   async function onNewSpinner() {

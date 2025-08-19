@@ -8,15 +8,18 @@
   html {
     @apply h-full;
     font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', Inter, Arial, sans-serif;
+    overflow: hidden; /* prevent scrollbars */
   }
   
   body {
     @apply h-full m-0 bg-slate-900 text-white;
     font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', Inter, Arial, sans-serif;
+    overflow: hidden; /* prevent scrollbars */
   }
   
   #root {
     @apply h-full;
+    overflow: hidden; /* prevent scrollbars */
   }
   
   button {
@@ -91,6 +94,15 @@ button {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/* Optional: subtle breathing/glow effect hooks */
+@keyframes wheel-breathe {
+  0%, 100% { filter: drop-shadow(0 10px 30px rgba(0,0,0,0.5)); }
+  50% { filter: drop-shadow(0 0 30px rgba(99,102,241,0.35)); }
+}
+.wheel-breathe {
+  animation: wheel-breathe 4s ease-in-out infinite;
 }
 
 /* Prevent text selection on wheel */
