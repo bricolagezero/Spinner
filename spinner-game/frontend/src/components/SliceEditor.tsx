@@ -79,6 +79,16 @@ export default function SliceEditor({
                    onChange={(e) => onChange({ outcomeImageScale: Math.max(0.2, Math.min(1, parseInt(e.target.value)/100)) })} />
             <span className="text-xs">{Math.round((slice.outcomeImageScale ?? 0.6) * 100)}%</span>
           </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm">Timer (seconds)</span>
+            <input 
+              type="number" 
+              className="w-24 px-2 py-1 rounded border" 
+              value={slice.timerSeconds || ""} 
+              placeholder="None"
+              onChange={(e) => onChange({ timerSeconds: e.target.value ? Math.max(0, parseInt(e.target.value || "0")) : undefined })} 
+            />
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

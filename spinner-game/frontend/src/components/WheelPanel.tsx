@@ -39,6 +39,7 @@ export default function WheelPanel({
   const [showModal, setShowModal] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [showCompletion, setShowCompletion] = useState(false);
+  const [sliceCountdown, setSliceCountdown] = useState<number | null>(null);
 
   // responsive size - make it smaller
   const [size, setSize] = useState(500);
@@ -136,6 +137,10 @@ export default function WheelPanel({
           const totalSeconds = (settings.timerMinutes || 0) * 60 + (settings.timerSeconds || 0);
           setCountdown(totalSeconds);
         }
+        // Set per-slice timer if available
+        if (resultIndex != null && settings.slices[resultIndex].timerSeconds) {
+          setSliceCountdown(settings.slices[resultIndex].timerSeconds);
+        }
         if (!settings.allowRepeats && resultIndex != null) {
           const next = settings.slices.map((s, i) => (i === resultIndex ? { ...s, disabled: true } : s));
           setSettings({ ...settings, slices: next });
@@ -173,6 +178,12 @@ export default function WheelPanel({
     const id = setTimeout(() => setCountdown((c) => (c == null ? null : c - 1)), 1000);
     return () => clearTimeout(id);
   }, [countdown]);
+
+  useEffect(() => {
+    if (sliceCountdown == null || sliceCountdown <= 0) return;
+    const id = setTimeout(() => setSliceCountdown((c) => (c == null ? null : c - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [sliceCountdown]);
 
   const current = resultIndex != null ? settings.slices[resultIndex] : null;
 
@@ -380,22 +391,41 @@ export default function WheelPanel({
               
               {/* Content */}
               <div className="relative bg-white text-black rounded-2xl p-6 md:p-8 w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh] flex flex-col items-center overflow-auto shadow-2xl">
+                {/* Global Timer */}
                 {settings.timerEnabled && countdown != null && (
-                  <div className="absolute -top-16 left-1/2 -translate-x-1/2">
+                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-10">
                     <div className="bg-black/80 backdrop-blur-md rounded-2xl px-6 py-3 text-white font-bold text-2xl shadow-[0_0_30px_rgba(255,255,255,0.3)] animate-pulse" style={{ fontFamily: 'Roboto, sans-serif' }}>
                       {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
                     </div>
                   </div>
                 )}
+                
+                {/* Per-slice Timer */}
+                {current.timerSeconds && sliceCountdown != null && (
+                  <div className="absolute top-4 right-4 z-10">
+                    <div className="bg-gradient-to-br from-pink-500 to-purple-600 rounded-full w-20 h-20 flex items-center justify-center text-white font-bold text-2xl shadow-[0_0_20px_rgba(236,72,153,0.5)] animate-pulse">
+                      {sliceCountdown}
+                    </div>
+                  </div>
+                )}
+                
                 <h2 className="text-3xl font-bold mb-4 text-center" style={{ fontFamily: 'Roboto, sans-serif' }}>{current.label}</h2>
                 {current.outcomeImageUrl && (
-                  <img
-                    src={current.outcomeImageUrl}
-                    className="mb-4 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform"
-                    style={{ maxHeight: "45vh", transform: "scale(" + (current.outcomeImageScale ?? 0.6) + ")" }}
-                    alt=""
-                    onClick={() => window.open(current.outcomeImageUrl, '_blank')}
-                  />
+                  <div className="w-full flex justify-center mb-4">
+                    <img
+                      src={current.outcomeImageUrl}
+                      className="rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform object-contain"
+                      style={{ 
+                        maxWidth: '100%',
+                        maxHeight: '45vh',
+                        width: 'auto',
+                        height: 'auto',
+                        transform: `scale(${current.outcomeImageScale ?? 0.6})`
+                      }}
+                      alt=""
+                      onClick={() => window.open(current.outcomeImageUrl, '_blank')}
+                    />
+                  </div>
                 )}
                 {current.outcomeText && (
                   <p className="mb-4 text-center" style={{ fontSize: current.outcomeFontSize ?? 20, fontFamily: 'Roboto, sans-serif' }}>
@@ -403,7 +433,10 @@ export default function WheelPanel({
                   </p>
                 )}
                 <button 
-                  onClick={() => setShowModal(false)} 
+                  onClick={() => {
+                    setShowModal(false);
+                    setSliceCountdown(null);
+                  }} 
                   className="mt-6 px-6 py-3 bg-pink-600 hover:bg-pink-700 rounded-xl text-white text-lg font-semibold transition-colors shadow-lg"
                   style={{ fontFamily: 'Roboto, sans-serif' }}
                 >
