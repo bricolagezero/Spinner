@@ -173,3 +173,38 @@ button {
   transform-origin: center;
   will-change: transform, filter, stroke-width;
 }
+
+/* Fireworks animation used around chosen slice */
+@keyframes fireworkone {
+  0% { opacity: 0; }
+  25% { opacity: .15; }
+  50% { opacity: .3; }
+  75% { opacity: .15; }
+  100% { opacity: 0; }
+}
+@keyframes fireworktwo {
+  0% { opacity: 0; }
+  25% { opacity: .45; }
+  50% { opacity: .8; }
+  75% { opacity: .45; }
+  100% { opacity: 0; }
+}
+@keyframes fireworthree {
+  0% { opacity: 0; }
+  25% { opacity: .55; }
+  50% { opacity: 1; }
+  75% { opacity: .55; }
+  100% { opacity: 0; }
+}
+
+.firework-icon .cls-1,
+.firework-icon .cls-2,
+.firework-icon .cls-3 {
+  opacity: 0;
+  animation-duration: 1s;
+  animation-fill-mode: both;
+  animation-iteration-count: 1; /* default once */
+}
+.firework-icon.firework-once .cls-1 { animation-name: fireworkone;  animation-delay: .71s; }
+.firework-icon.firework-once .cls-2 { animation-name: fireworktwo;  animation-delay: .41s; }
+.firework-icon.firework-once .cls-3 { animation-name: fireworthree; animation-delay: .11s; }

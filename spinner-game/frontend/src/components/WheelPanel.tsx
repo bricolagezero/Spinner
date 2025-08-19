@@ -47,6 +47,10 @@ export default function WheelPanel({
   // NEW: container ref for sizing when embedded
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Fireworks: track which slice to decorate briefly
+  const [fireworkFor, setFireworkFor] = useState<string | null>(null);
+  const FIREWORK_DURATION_MS = 1000;
+
   // responsive size - bigger wheel, still safe on small screens
   const [size, setSize] = useState(500);
   useEffect(() => {
@@ -197,9 +201,18 @@ export default function WheelPanel({
       // Inform external listeners when the wheel visually stops
       onSpinEnd?.();
 
-      // Wait for whoosh to finish, then pause 2s, then perform actions
+      // Immediately gray out the landed slice (fade begins now)
+      if (resultIndex != null) {
+        const landedId = settings.slices[resultIndex].id;
+        if (!viewedSlices.includes(landedId)) setViewedSlices(prev => [...prev, landedId]);
+        // Fireworks around chosen slice for 1s
+        setFireworkFor(landedId);
+        setTimeout(() => setFireworkFor((id) => (id === landedId ? null : id)), FIREWORK_DURATION_MS);
+      }
+
+      // Wait for whoosh (no-op) then pause AFTER fade (1s) before showing modal
       try { await (whooshPromiseRef.current || Promise.resolve()); } catch {}
-      await sleep(2000); // was 1000ms
+      await sleep(1000);
 
       setShowModal(true);
       if (settings.timerEnabled) {
@@ -209,38 +222,6 @@ export default function WheelPanel({
       if (resultIndex != null && settings.slices[resultIndex].timerSeconds) {
         setSliceCountdown(settings.slices[resultIndex].timerSeconds);
       }
-      if (resultIndex != null) {
-        const sliceId = settings.slices[resultIndex].id;
-        if (!viewedSlices.includes(sliceId)) setViewedSlices(prev => [...prev, sliceId]);
-      }
-
-      // Remove persisted disabling. Session viewing controls eligibility.
-      // if (!settings.allowRepeats && resultIndex != null) {
-      //   const next = settings.slices.map((s, i) => (i === resultIndex ? { ...s, disabled: true } : s));
-      //   setSettings({ ...settings, slices: next });
-      // }
-
-      // Confetti effect
-      const root = document.createElement("div");
-      root.style.position = "fixed"; root.style.inset = "0"; root.style.pointerEvents = "none";
-      document.body.appendChild(root);
-      for (let i = 0; i < 60; i++) {
-        const p = document.createElement("div");
-        p.style.position = "absolute";
-        p.style.left = Math.random() * 100 + "%"; p.style.top = "-10px";
-        p.style.width = "8px"; p.style.height = "14px";
-        p.style.background = DEFAULT_PALETTE[Math.floor(Math.random() * DEFAULT_PALETTE.length)];
-        p.style.opacity = "0.9";
-        p.style.transform = "rotate(" + Math.random() * 360 + "deg)";
-        p.style.transition = "transform 1.2s linear, top 1.2s linear, opacity 1.2s linear";
-        root.appendChild(p);
-        requestAnimationFrame(() => {
-          p.style.top = "110%";
-          p.style.transform = "translate(" + ((Math.random() * 2 - 1) * 200) + "px,0) rotate(" + (360 + Math.random() * 360) + "deg)";
-          p.style.opacity = "0.2";
-        });
-      }
-      setTimeout(() => document.body.removeChild(root), 1300);
     };
     el.addEventListener("transitionend", onEnd);
     return () => el.removeEventListener("transitionend", onEnd);
@@ -473,6 +454,51 @@ export default function WheelPanel({
                         </text>
                       ))}
                     </g>
+
+                    {/* Fireworks around the chosen slice (briefly visible) */}
+                    {fireworkFor === slice.id && (
+                      <g
+                        className="firework-icon firework-once"
+                        style={{ transformBox: "fill-box", transformOrigin: "center" }}
+                      >
+                        {/* place bursts around a ring inside the slice */}
+                        {Array.from({ length: 12 }).map((_, k) => {
+                          const angle = (k / 12) * 2 * Math.PI;
+                          const r = radius * 0.65;
+                          const x = r * Math.sin(angle);
+                          const y = -r * Math.cos(angle);
+                          const cls = k % 3 === 0 ? "cls-1" : k % 3 === 1 ? "cls-2" : "cls-3";
+                          return (
+                            <circle
+                              key={k}
+                              cx={x}
+                              cy={y}
+                              r={5}
+                              className={cls}
+                              fill={DEFAULT_PALETTE[k % DEFAULT_PALETTE.length]}
+                            />
+                          );
+                        })}
+                        {/* inner ring */}
+                        {Array.from({ length: 8 }).map((_, k) => {
+                          const angle = (k / 8) * 2 * Math.PI + Math.PI / 8;
+                          const r = radius * 0.5;
+                          const x = r * Math.sin(angle);
+                          const y = -r * Math.cos(angle);
+                          const cls = k % 3 === 0 ? "cls-1" : k % 3 === 1 ? "cls-2" : "cls-3";
+                          return (
+                            <circle
+                              key={`in-${k}`}
+                              cx={x}
+                              cy={y}
+                              r={4}
+                              className={cls}
+                              fill={DEFAULT_PALETTE[(k + 3) % DEFAULT_PALETTE.length]}
+                            />
+                          );
+                        })}
+                      </g>
+                    )}
                   </g>
                 );
               })}
