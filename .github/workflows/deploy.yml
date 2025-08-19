@@ -27,12 +27,21 @@ jobs:
           cache: 'npm'
           cache-dependency-path: spinner-game/frontend/package-lock.json
 
+      - name: Check TypeScript
+        working-directory: spinner-game/frontend
+        run: |
+          npx tsc --version
+          npx tsc --noEmit || true
+          
       - name: Build frontend
         working-directory: spinner-game/frontend
         run: |
           npm ci
           rm -rf node_modules/.cache
           rm -f tsconfig.tsbuildinfo
+          rm -rf .tsbuildinfo
+          rm -rf dist
+          rm -rf build
           npm run build
 
       - name: DNS check
