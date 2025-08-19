@@ -53,9 +53,10 @@ export default function WheelPanel({
       // If embedded (sleekMode), size to parent container to avoid overflow/scroll
       if (sleekMode && containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        const triangleSpace = 70; // space for pointer above the wheel
-        const max = Math.min(rect.width - 40, rect.height - triangleSpace - 40);
-        setSize(Math.max(320, Math.floor(max)));
+        // use smaller margins to maximize wheel area, but keep triangle space
+        const triangleSpace = 50;
+        const max = Math.min(rect.width - 20, rect.height - triangleSpace - 20);
+        setSize(Math.max(360, Math.floor(max)));
       } else {
         // Slightly smaller default factor to reduce overflow in full-screen mode
         setSize(Math.max(340, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.75)));
@@ -301,11 +302,11 @@ export default function WheelPanel({
       ref={containerRef}
       className={`${sleekMode ? "h-full" : "min-h-screen"} p-4 flex flex-col relative`}
     >
-      {/* Background image - fixed behind everything, non-interactive */}
-      {settings.backgroundMode === 'image' && settings.backgroundUrl && (
+      {/* Background image - render only when not in sleekMode to avoid covering page headers */}
+      {!sleekMode && settings.backgroundMode === 'image' && settings.backgroundUrl && (
         <div
           className="fixed inset-0 flex justify-center items-center pointer-events-none"
-          style={{ zIndex: 0 }}
+          style={{ zIndex: -1 }}
         >
           <img src={settings.backgroundUrl} alt="" className="w-full h-full object-cover" />
         </div>
@@ -350,7 +351,7 @@ export default function WheelPanel({
           </div>
 
           {/* SVG Wheel */}
-          <svg width={size} height={size} className="drop-shadow-2xl">
+          <svg width={size} height={size} className="drop-shadow-2xl" style={{ overflow: "visible" }}>
             {/* slice shadow filter via CSS class or fallback to plain */}
             <g ref={wheelRef} style={wheelStyle}>
               {settings.slices.map((slice, i) => {
@@ -370,11 +371,12 @@ export default function WheelPanel({
                 const labelLineHeight = Math.round(labelFont * 1.12);
 
                 // NEW: circle at the top edge of the slice (for number or icon)
-                const circleDiameter = Math.min(100, Math.max(60, Math.round(size * 0.18)));
+                const baseDiameter = Math.min(100, Math.max(60, Math.round(size * 0.18)));
+                const circleDiameter = Math.max(40, baseDiameter - 20); // 20px smaller
                 const circleRadius = circleDiameter / 2;
-                // Keep the circle just inside the outer arc
-                const circleCY = -radius + circleRadius + 6;
-                // Labels start ~50px below the circle's bottom edge
+                // Place the circle so its center sits exactly on the outer edge (half in, half out)
+                const circleCY = -radius;
+                // Labels start ~50px below the circle's bottom edge (inside the wheel)
                 const labelStartY = circleCY + circleRadius + 50;
 
                 const clipId = `sliceIconClip-${slice.id}`;
@@ -468,17 +470,20 @@ export default function WheelPanel({
           >
             {/* Animated gradient border wrapper (5px) */}
             <div className="relative w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh]">
-              {/* Gradient frame layer */}
-              <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
-                <div
-                  className="absolute inset-0 animate-spin-slower"
-                  style={{
-                    background:
-                      "conic-gradient(from 0deg at 50% 50%, #7c3aed, #ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6, #ec4899, #f43f5e, #7c3aed)",
-                  }}
-                />
-              </div>
-
+              {/* Gradient border ring layer (only the stroke rotates) */}
+              <div
+                className="absolute inset-0 rounded-3xl pointer-events-none animate-spin-slower"
+                style={{
+                  background:
+                    "conic-gradient(from 0deg at 50% 50%, #7c3aed, #ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6, #ec4899, #f43f5e, #7c3aed)",
+                  padding: "5px",
+                  borderRadius: "24px",
+                  WebkitMask:
+                    "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+                  WebkitMaskComposite: "xor",
+                  maskComposite: "exclude",
+                }}
+              />
               {/* Content panel inset by 5px to reveal the border - translucent white with blur */}
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
@@ -500,15 +505,17 @@ export default function WheelPanel({
                     </div>
                   )}
 
-                  {/* Slick animated gradient title */}
-                  <motion.h2
-                    initial={{ y: -8, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1, scale: [1, 1.04, 1] }}
-                    transition={{ duration: 0.8, type: "spring", stiffness: 140 }}
-                    className="text-3xl md:text-4xl font-extrabold text-center text-slate-900"
+                  {/* Title pill: dark background, white text, slides in after 1s */}
+                  <motion.div
+                    initial={{ y: -24, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 1 }}
+                    className="px-4 py-2 rounded-full bg-slate-900/85 text-white shadow-lg"
                   >
-                    {current.label}
-                  </motion.h2>
+                    <h2 className="m-0 text-2xl md:text-3xl font-bold text-center">
+                      {current.label}
+                    </h2>
+                  </motion.div>
 
                   {current.outcomeImageUrl && (
                     <div className="flex-1 w-full flex items-center justify-center">

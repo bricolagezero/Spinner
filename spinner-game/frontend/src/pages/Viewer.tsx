@@ -53,7 +53,7 @@ export default function ViewerPage() {
         )}
 
         <div className="flex-1 flex flex-col">
-          {/* Header in top left */}
+          {/* Header in top left (now visible above background) */}
           <motion.div 
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -89,15 +89,15 @@ export default function ViewerPage() {
             />
           </div>
           
-          {/* Footer */}
+          {/* Footer - fixed bottom center */}
           {settings.footer && (
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-4 px-4 py-3 bg-black/50 backdrop-blur-sm rounded-lg self-start"
+              className="fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-3 bg-black/50 backdrop-blur-sm rounded-lg z-20"
             >
-              <p className="m-0 text-sm opacity-80">{settings.footer}</p>
+              <p className="m-0 text-sm opacity-90 text-center">{settings.footer}</p>
             </motion.div>
           )}
         </div>
