@@ -43,17 +43,28 @@ export default function WheelPanel({
   const [viewedSlices, setViewedSlices] = useState<string[]>([]);
   // Track initial total slices to keep denominator fixed for the session
   const initialTotalRef = useRef<number>(settings.slices.length);
+  // NEW: container ref for sizing when embedded
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // responsive size - bigger wheel, still safe on small screens
   const [size, setSize] = useState(500);
   useEffect(() => {
-    const onResize = () =>
-      // increase factor so the wheel is larger
-      setSize(Math.max(340, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.8)));
-    onResize();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+    const compute = () => {
+      // If embedded (sleekMode), size to parent container to avoid overflow/scroll
+      if (sleekMode && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const triangleSpace = 70; // space for pointer above the wheel
+        const max = Math.min(rect.width - 40, rect.height - triangleSpace - 40);
+        setSize(Math.max(320, Math.floor(max)));
+      } else {
+        // Slightly smaller default factor to reduce overflow in full-screen mode
+        setSize(Math.max(340, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.75)));
+      }
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, [sleekMode]);
   const radius = Math.floor(size * 0.45);
   const cx = size / 2, cy = size / 2;
 
@@ -286,18 +297,17 @@ export default function WheelPanel({
   const spinsLeft = Math.max(0, initialTotalRef.current - uniqueSeenCount);
 
   return (
-    <div className="min-h-screen p-4 flex flex-col relative">
+    <div
+      ref={containerRef}
+      className={`${sleekMode ? "h-full" : "min-h-screen"} p-4 flex flex-col relative`}
+    >
       {/* Background image - fixed behind everything, non-interactive */}
       {settings.backgroundMode === 'image' && settings.backgroundUrl && (
         <div
           className="fixed inset-0 flex justify-center items-center pointer-events-none"
           style={{ zIndex: 0 }}
         >
-          <img
-            src={settings.backgroundUrl}
-            alt=""
-            className="w-full h-full object-cover"
-          />
+          <img src={settings.backgroundUrl} alt="" className="w-full h-full object-cover" />
         </div>
       )}
 
@@ -359,6 +369,16 @@ export default function WheelPanel({
                 const lines = wrapIntoLines(slice.label, charsPerLine).slice(0, maxLines);
                 const labelLineHeight = Math.round(labelFont * 1.12);
 
+                // NEW: circle at the top edge of the slice (for number or icon)
+                const circleDiameter = Math.min(100, Math.max(60, Math.round(size * 0.18)));
+                const circleRadius = circleDiameter / 2;
+                // Keep the circle just inside the outer arc
+                const circleCY = -radius + circleRadius + 6;
+                // Labels start ~50px below the circle's bottom edge
+                const labelStartY = circleCY + circleRadius + 50;
+
+                const clipId = `sliceIconClip-${slice.id}`;
+
                 return (
                   <g key={slice.id}>
                     <path
@@ -372,24 +392,51 @@ export default function WheelPanel({
                       style={{ transition: "filter 0.3s ease, opacity 0.3s ease" }}
                     />
                     <g transform={`translate(${cx},${cy}) rotate(${i * sliceAngle + sliceAngle / 2})`}>
-                      {/* Number at top */}
-                      <text
-                        x="0"
-                        y={-radius * 0.72}
-                        textAnchor="middle"
-                        fill="white"
-                        fontSize={numberFont}
-                        fontWeight="bold"
-                        className="wheel-slice-text"
-                      >
-                        {i + 1}
-                      </text>
-                      {/* Label - up to 3 lines, uniform font */}
+                      {/* Circle for number/icon at the top edge */}
+                      <defs>
+                        <clipPath id={clipId}>
+                          <circle cx="0" cy={circleCY} r={circleRadius} />
+                        </clipPath>
+                      </defs>
+                      <circle
+                        cx={0}
+                        cy={circleCY}
+                        r={circleRadius}
+                        fill="#fff"
+                        stroke="#333"
+                        strokeWidth={3}
+                      />
+                      {/* Icon inside circle if present, else the number */}
+                      {slice.iconUrl ? (
+                        <image
+                          href={slice.iconUrl}
+                          x={-circleRadius}
+                          y={circleCY - circleRadius}
+                          width={circleDiameter}
+                          height={circleDiameter}
+                          preserveAspectRatio="xMidYMid slice"
+                          clipPath={`url(#${clipId})`}
+                        />
+                      ) : (
+                        <text
+                          x={0}
+                          y={circleCY + Math.round(numberFont * 0.35)}
+                          textAnchor="middle"
+                          fill="#111827"
+                          fontSize={numberFont}
+                          fontWeight="800"
+                          className="wheel-slice-text"
+                        >
+                          {i + 1}
+                        </text>
+                      )}
+
+                      {/* Label - up to 3 lines, start ~50px below the circle */}
                       {lines.map((line, lineIndex) => (
                         <text
                           key={lineIndex}
                           x="0"
-                          y={-textRing + lineIndex * labelLineHeight}
+                          y={labelStartY + lineIndex * labelLineHeight}
                           textAnchor="middle"
                           fill="white"
                           fontSize={labelFont}
@@ -432,14 +479,14 @@ export default function WheelPanel({
                 />
               </div>
 
-              {/* Content panel inset by 5px to reveal the border */}
+              {/* Content panel inset by 5px to reveal the border - translucent white with blur */}
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="absolute inset-[5px] bg-white rounded-2xl p-4 md:p-6 overflow-hidden shadow-2xl"
+                className="absolute inset-[5px] bg-white/50 backdrop-blur-md rounded-2xl p-4 md:p-6 overflow-hidden shadow-2xl"
               >
-                <div className="w-[90%] h-[90%] mx-auto flex flex-col items-center justify-start gap-4">
+                <div className="w/[90%] h/[90%] mx-auto flex flex-col items-center justify-start gap-4">
                   {/* Timers */}
                   {settings.timerEnabled && countdown != null && (
                     <div className="text-base md:text-lg font-semibold text-center text-black">
@@ -458,7 +505,7 @@ export default function WheelPanel({
                     initial={{ y: -8, opacity: 0 }}
                     animate={{ y: 0, opacity: 1, scale: [1, 1.04, 1] }}
                     transition={{ duration: 0.8, type: "spring", stiffness: 140 }}
-                    className="text-3xl md:text-4xl font-extrabold text-center bg-gradient-to-r from-purple-600 via-pink-500 to-amber-400 bg-clip-text text-transparent drop-shadow"
+                    className="text-3xl md:text-4xl font-extrabold text-center text-slate-900"
                   >
                     {current.label}
                   </motion.h2>

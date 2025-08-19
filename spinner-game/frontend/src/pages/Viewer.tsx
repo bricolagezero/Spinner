@@ -41,7 +41,7 @@ export default function ViewerPage() {
 
   return (
     <div className="min-h-screen flex bg-slate-900">
-      <div className="flex-1 p-6 md:p-8 lg:p-12 flex relative">
+      <div className="flex-1 p-4 md:p-6 lg:p-8 flex relative">
         {/* Countdown Timer */}
         {settings.timerEnabled && timerActive && timeLeft !== null && (
           <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-lg px-4 py-2 z-20">
@@ -58,9 +58,9 @@ export default function ViewerPage() {
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
-            className="mb-8"
+            className="mb-4"
           >
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-2 drop-shadow-lg">{settings.title}</h1>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-1 drop-shadow-lg">{settings.title}</h1>
             {settings.subtitle && (
               <motion.p 
                 initial={{ x: -50, opacity: 0 }}
@@ -74,7 +74,7 @@ export default function ViewerPage() {
           </motion.div>
           
           {/* Wheel in center */}
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center overflow-hidden">
             <WheelPanel 
               settings={settings} 
               setSettings={setSettings as any} 
@@ -95,7 +95,7 @@ export default function ViewerPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-8 px-4 py-3 bg-black/50 backdrop-blur-sm rounded-lg self-start"
+              className="mt-4 px-4 py-3 bg-black/50 backdrop-blur-sm rounded-lg self-start"
             >
               <p className="m-0 text-sm opacity-80">{settings.footer}</p>
             </motion.div>
