@@ -31,6 +31,8 @@ jobs:
         working-directory: spinner-game/frontend
         run: |
           npm ci
+          rm -rf node_modules/.cache
+          rm -f tsconfig.tsbuildinfo
           npm run build
 
       - name: DNS check
