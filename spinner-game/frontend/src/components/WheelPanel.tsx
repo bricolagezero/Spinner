@@ -147,6 +147,13 @@ export default function WheelPanel({
         if (resultIndex != null && settings.slices[resultIndex].timerSeconds) {
           setSliceCountdown(settings.slices[resultIndex].timerSeconds);
         }
+        // Mark slice as viewed
+        if (resultIndex != null) {
+          const sliceId = settings.slices[resultIndex].id;
+          if (!viewedSlices.includes(sliceId)) {
+            setViewedSlices(prev => [...prev, sliceId]);
+          }
+        }
         if (!settings.allowRepeats && resultIndex != null) {
           const next = settings.slices.map((s, i) => (i === resultIndex ? { ...s, disabled: true } : s));
           setSettings({ ...settings, slices: next });
@@ -177,7 +184,7 @@ export default function WheelPanel({
     };
     el.addEventListener("transitionend", onEnd);
     return () => el.removeEventListener("transitionend", onEnd);
-  }, [spinning, resultIndex, settings, setSettings]);
+  }, [spinning, resultIndex, settings, setSettings, viewedSlices]);
 
   useEffect(() => {
     if (countdown == null || countdown <= 0) return;
@@ -204,6 +211,7 @@ export default function WheelPanel({
     const resetSlices = settings.slices.map(s => ({ ...s, disabled: false }));
     setSettings({ ...settings, slices: resetSlices });
     setShowCompletion(false);
+    setViewedSlices([]);
   };
 
   // geometry
@@ -254,81 +262,64 @@ export default function WheelPanel({
         )}
 
         {/* Wheel container */}
-        <div className="relative w-80 h-80 mx-auto">
+        <div className="relative mx-auto" style={{ width: size, height: size }}>
           {/* Triangle indicator - higher z-index */}
-          <div className="absolute left-1/2 -translate-x-1/2 -top-12 z-40">
+          <div className="absolute left-1/2 -translate-x-1/2 -top-12 z-40 triangle-indicator">
             <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[40px] border-b-red-600"></div>
           </div>
 
-          {/* Wheel */}
-          <div
-            className="relative w-full h-full rounded-full overflow-hidden shadow-2xl transition-transform duration-[3000ms] ease-out"
-            style={{ transform: `rotate(${rotation}deg)` }}
-          >
-            {settings.slices.map((slice, index) => {
-              const angle = 360 / settings.slices.length;
-              const skew = 90 - angle;
-              const rotation = index * angle;
-              const isViewed = viewedSlices.includes(slice.id);
-
-              return (
-                <div
-                  key={slice.id}
-                  className="absolute w-1/2 h-1/2 origin-bottom-right"
-                  style={{
-                    transform: `rotate(${rotation}deg) skewY(-${skew}deg)",
-                    top: '0',
-                    left: '0',
-                  }}
-                >
-                  <div
-                    className="w-full h-full"
-                    style={{
-                      backgroundColor: slice.color,
-                      opacity: isViewed ? 0.5 : 1,
-                      filter: isViewed ? 'grayscale(70%)' : 'none',
-                      transformOrigin: 'right bottom',
-                      transform: `skewY(${skew}deg)`,
-                    }}
-                  />
-                  
-                  {/* Slice content */}
-                  <div
-                    className="absolute inset-0 flex items-center justify-center"
-                    style={{
-                      transform: `skewY(${skew}deg) rotate(${angle / 2}deg)`,
-                    }}
-                  >
-                    <div 
-                      className="text-center flex flex-col items-center justify-center"
-                      style={{
-                        transform: `rotate(-${rotation + angle / 2}deg)",
-                      }}
-                    >
-                      {/* Number always on top and bigger */}
-                      <div className="text-3xl font-bold text-white mb-1 drop-shadow-lg">
-                        {index + 1}
-                      </div>
-                      {/* Text below number */}
-                      <div className="text-sm text-white px-2 font-medium drop-shadow">
+          {/* SVG Wheel */}
+          <svg width={size} height={size} className="drop-shadow-2xl">
+            <g ref={wheelRef} style={wheelStyle}>
+              {settings.slices.map((slice, i) => {
+                const isViewed = viewedSlices.includes(slice.id);
+                return (
+                  <g key={slice.id}>
+                    <path 
+                      d={slicePath(i)} 
+                      fill={isViewed ? desaturate(slice.color) : slice.color}
+                      stroke="#333"
+                      strokeWidth="2"
+                      opacity={isViewed ? 0.5 : 1}
+                    />
+                    <g transform={`translate(${cx},${cy}) rotate(${i * sliceAngle + sliceAngle / 2})`}>
+                      <text 
+                        x="0" 
+                        y={-radius * 0.7} 
+                        textAnchor="middle"
+                        fill="white"
+                        fontSize="24"
+                        fontWeight="bold"
+                        className="drop-shadow-lg wheel-slice-text"
+                      >
+                        {i + 1}
+                      </text>
+                      <text 
+                        x="0" 
+                        y={-radius * 0.5} 
+                        textAnchor="middle"
+                        fill="white"
+                        fontSize="14"
+                        fontWeight="500"
+                        className="drop-shadow wheel-slice-text"
+                      >
                         {slice.label}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Center cap */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-xl z-30"></div>
+                      </text>
+                    </g>
+                  </g>
+                );
+              })}
+            </g>
+            {/* Center cap */}
+            <circle cx={cx} cy={cy} r={size * 0.06} fill="white" stroke="#333" strokeWidth="3" />
+          </svg>
         </div>
 
         {/* Spin button */}
         <div className="text-center mt-8">
           <button
             onClick={spin}
-            disabled={spinning || viewedSlices.length === settings.slices.length}
+            disabled={spinning || (!settings.allowRepeats && activeSlices.length === 0)}
             className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             {spinning ? 'Spinning...' : 'Spin the Wheel'}
@@ -342,122 +333,78 @@ export default function WheelPanel({
       </footer>
 
       {/* Slice modal */}
-      {showModal && current && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-4">{current.label}</h2>
-            
-            {current.timerSeconds && current.timerSeconds > 0 && (
-              <div className="mb-4 text-lg">
-                Time remaining: {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
-              </div>
-            )}
-
-            {/* Button based on whether all slices are viewed */}
-            {viewedSlices.length === settings.slices.length ? (
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setShowCompletionModal(true);
-                }}
-                className="mt-4 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"
-              >
-                Close
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  spin();
-                }}
-                className="mt-4 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"
-              >
-                Spin Again
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Completion modal */}
-      {showCompletionModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full">
-            <h2 className="text-3xl font-bold mb-4 text-center text-green-600">Activity Complete!</h2>
-            <p className="text-lg text-center mb-6">Congratulations! You've viewed all slices.</p>
-            <button
-              onClick={() => {
-                setShowCompletionModal(false);
-                // Reset or navigate
-              }}
-              className="px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600 w-full font-semibold"
+      <AnimatePresence>
+        {showModal && current && (
+          <motion.div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              className="relative bg-white rounded-2xl p-6 md:p-8 max-w-md w-full max-h-[80vh] overflow-y-auto shadow-2xl"
             >
-              Finish
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-              </div>
+              {/* Timers */}
+              {settings.timerEnabled && countdown != null && (
+                <div className="mb-4 text-lg font-semibold text-center">
+                  Global Timer: {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
+                </div>
+              )}
               
-              {/* Content */}
-              <div className="relative bg-white text-black rounded-2xl p-6 md:p-8 w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh] flex flex-col items-center overflow-auto shadow-2xl">
-                {/* Global Timer */}
-                {settings.timerEnabled && countdown != null && (
-                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-10">
-                    <div className="bg-black/80 backdrop-blur-md rounded-2xl px-6 py-3 text-white font-bold text-2xl shadow-[0_0_30px_rgba(255,255,255,0.3)] animate-pulse" style={{ fontFamily: 'Roboto, sans-serif' }}>
-                      {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Per-slice Timer */}
-                {current.timerSeconds && sliceCountdown != null && (
-                  <div className="absolute top-4 right-4 z-10">
-                    <div className="bg-gradient-to-br from-pink-500 to-purple-600 rounded-full w-20 h-20 flex items-center justify-center text-white font-bold text-2xl shadow-[0_0_20px_rgba(236,72,153,0.5)] animate-pulse">
-                      {sliceCountdown}
-                    </div>
-                  </div>
-                )}
-                
-                <h2 className="text-3xl font-bold mb-4 text-center" style={{ fontFamily: 'Roboto, sans-serif' }}>{current.label}</h2>
-                {current.outcomeImageUrl && (
-                  <div className="w-full flex justify-center mb-4 px-4">
-                    <div className="max-w-full" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                      <img 
-                        src={current.outcomeImageUrl}
-                        className="rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform object-contain"
-                        style={{ 
-                          maxWidth: '100%',
-                          maxHeight: '45vh',
-                          width: 'auto',
-                          height: 'auto',
-                          transform: `scale(${current.outcomeImageScale ?? 0.6})`
-                        }}
-                        alt=""
-                        onClick={() => window.open(current.outcomeImageUrl, '_blank')}
-                      />
-                    </div>
-                  </div>
-                )}
-                {current.outcomeText && (
-                  <p className="mb-4 text-center" style={{ fontSize: current.outcomeFontSize ?? 20, fontFamily: 'Roboto, sans-serif' }}>
-                    {current.outcomeText}
-                  </p>
-                )}
-                <button 
+              {current.timerSeconds && sliceCountdown != null && sliceCountdown > 0 && (
+                <div className="mb-4 text-lg font-semibold text-center text-purple-600">
+                  Slice Timer: {Math.floor(sliceCountdown / 60)}:{String(sliceCountdown % 60).padStart(2, '0')}
+                </div>
+              )}
+              
+              <h2 className="text-2xl font-bold mb-4 text-center">{current.label}</h2>
+              
+              {current.outcomeImageUrl && (
+                <div className="w-full flex justify-center mb-4">
+                  <img 
+                    src={current.outcomeImageUrl}
+                    className="rounded-lg shadow-lg max-w-full h-auto"
+                    style={{ 
+                      maxHeight: '300px',
+                      transform: `scale(${current.outcomeImageScale ?? 1})`
+                    }}
+                    alt=""
+                  />
+                </div>
+              )}
+              
+              {current.outcomeText && (
+                <p className="mb-4 text-center" style={{ fontSize: current.outcomeFontSize ?? 16 }}>
+                  {current.outcomeText}
+                </p>
+              )}
+
+              {/* Button based on whether all slices are viewed */}
+              {viewedSlices.length === settings.slices.length ? (
+                <button
+                  onClick={() => {
+                    setShowModal(false);
+                    setShowCompletionModal(true);
+                  }}
+                  className="mt-4 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full font-semibold"
+                >
+                  Close
+                </button>
+              ) : (
+                <button
                   onClick={() => {
                     setShowModal(false);
                     setSliceCountdown(null);
-                  }} 
-                  className="mt-6 px-6 py-3 bg-pink-600 hover:bg-pink-700 rounded-xl text-white text-lg font-semibold transition-colors shadow-lg"
-                  style={{ fontFamily: 'Roboto, sans-serif' }}
+                    spin();
+                  }}
+                  className="mt-4 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full font-semibold"
                 >
                   Spin Again
                 </button>
-              </div>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -467,7 +414,7 @@ export default function WheelPanel({
       <AnimatePresence>
         {showCompletion && (
           <motion.div 
-            className="modal-backdrop"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -482,11 +429,64 @@ export default function WheelPanel({
                 className="text-4xl md:text-5xl font-bold mb-6"
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ duration: 1, repeat: Infinity }}
-                style={{ fontFamily: 'Roboto, sans-serif' }}
               >
                 Activity Complete! 🎉
               </motion.h2>
-              <p className="text-lg md:text-xl mb-8 opacity-90" style={{ fontFamily: 'Roboto, sans-serif' }}>
+              <p className="text-lg md:text-xl mb-8 opacity-90">
+                Great job! You've completed all the spins.
+              </p>
+              <button 
+                onClick={handleRestart} 
+                className="px-8 py-4 bg-white text-orange-500 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-lg"
+              >
+                Restart Activity
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Completion Modal - All Slices Viewed */}
+      <AnimatePresence>
+        {showCompletionModal && (
+          <motion.div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", damping: 10, stiffness: 100 }}
+              className="bg-gradient-to-br from-green-400 to-blue-500 text-white rounded-3xl p-8 md:p-12 max-w-lg text-center shadow-2xl"
+            >
+              <motion.h2 
+                className="text-4xl md:text-5xl font-bold mb-6"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                Activity Complete! 🎉
+              </motion.h2>
+              <p className="text-lg md:text-xl mb-8 opacity-90">
+                Congratulations! You've viewed all slices.
+              </p>
+              <button 
+                onClick={() => {
+                  setShowCompletionModal(false);
+                  handleRestart();
+                }} 
+                className="px-8 py-4 bg-white text-green-500 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-lg"
+              >
+                Finish
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
                 Great job! You've completed all the spins.
               </p>
               <button 
