@@ -63,4 +63,4 @@ export const SpinnerCard: React.FC<SpinnerCardProps> = ({ slug, title, updatedAt
     </>
   );
 };
-};
+
