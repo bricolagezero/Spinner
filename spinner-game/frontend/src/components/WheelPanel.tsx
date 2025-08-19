@@ -53,6 +53,8 @@ export default function WheelPanel({
 
   // Track the exact selected slice by id to avoid index drift mid-spin
   const selectedSliceIdRef = useRef<string | null>(null);
+  // Track the target rotation value for this spin (so we can compute actual winner at end)
+  const targetRotationRef = useRef<number>(0);
 
   // responsive size - bigger wheel, still safe on small screens
   const [size, setSize] = useState(500);
@@ -179,7 +181,14 @@ export default function WheelPanel({
       if (performance.now() - start >= SPIN_DURATION_MS - 20) clearInterval(t);
     }, interval);
 
-    requestAnimationFrame(() => setRotation((r) => r + finalRotation));
+    // Apply rotation and remember the final absolute rotation angle we commanded
+    requestAnimationFrame(() =>
+      setRotation((r) => {
+        const next = r + finalRotation;
+        targetRotationRef.current = next;
+        return next;
+      })
+    );
   };
 
   const wheelRef = useRef<SVGGElement>(null);
@@ -208,10 +217,22 @@ export default function WheelPanel({
       // Inform external listeners when the wheel visually stops
       onSpinEnd?.();
 
-      // Immediately gray out the landed slice (fade begins now) using captured id
-      const landedId = selectedSliceIdRef.current ?? (resultIndex != null ? settings.slices[resultIndex]?.id : null);
+      // Determine the actual landed slice from the final rotation at end of transition
+      const N = Math.max(1, settings.slices.length);
+      const sliceDeg = 360 / N;
+      const residual = ((targetRotationRef.current % 360) + 360) % 360; // final wheel rotation
+      const a = (360 - residual) % 360; // angle aligned to "top" (pointer)
+      // Index whose center sits under the pointer (top): round to nearest center
+      const computedIndex = ((Math.round((a - sliceDeg / 2) / sliceDeg) % N) + N) % N;
+      const computedId = settings.slices[computedIndex]?.id ?? null;
+
+      // Prefer computed winner to avoid any mismatch; also correct the ref/cache
+      if (computedId) selectedSliceIdRef.current = computedId;
+
+      // Immediately gray out the landed slice (fade begins now)
+      const landedId = selectedSliceIdRef.current ?? null;
       if (landedId) {
-        if (!viewedSlices.includes(landedId)) setViewedSlices(prev => [...prev, landedId]);
+        if (!viewedSlices.includes(landedId)) setViewedSlices((prev) => [...prev, landedId]);
         // Fireworks around chosen slice for 1s
         setFireworkFor(landedId);
         setTimeout(() => setFireworkFor((id) => (id === landedId ? null : id)), FIREWORK_DURATION_MS);
@@ -228,7 +249,7 @@ export default function WheelPanel({
       }
       // Use id to fetch slice timer safely
       if (landedId) {
-        const s = settings.slices.find(sl => sl.id === landedId);
+        const s = settings.slices.find((sl) => sl.id === landedId);
         if (s?.timerSeconds) setSliceCountdown(s.timerSeconds);
       }
     };
