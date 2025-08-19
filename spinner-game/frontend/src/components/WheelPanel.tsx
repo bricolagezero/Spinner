@@ -223,33 +223,38 @@ export default function WheelPanel({
     return `M${cx},${cy} L${x0},${y0} A${radius},${radius} 0 0,1 ${x1},${y1} Z`;
   };
 
-  // Helper to wrap text for slices
-  const wrapText = (text: string, maxWidth: number) => {
-    const words = text.split(' ');
+  // Replace simple wrapper with a controlled two-line wrapper based on arc width
+  const wrapToLines = (text: string, charsPerLine: number, maxLines = 2) => {
+    const words = text.split(/\s+/);
     const lines: string[] = [];
-    let currentLine = '';
-    
-    words.forEach(word => {
-      const testLine = currentLine ? `${currentLine} ${word}` : word;
-      if (testLine.length > maxWidth / 10) { // Rough estimate
-        if (currentLine) lines.push(currentLine);
-        currentLine = word;
+    let line = "";
+    for (const w of words) {
+      const candidate = line ? `${line} ${w}` : w;
+      if (candidate.length > charsPerLine) {
+        if (line) lines.push(line);
+        line = w;
+        if (lines.length === maxLines - 1) break;
       } else {
-        currentLine = testLine;
+        line = candidate;
       }
-    });
-    
-    if (currentLine) lines.push(currentLine);
+    }
+    if (lines.length < maxLines && line) lines.push(line);
+    // If overflow, append remainder to last line with ellipsis
+    if (lines.length === maxLines) {
+      const used = lines.join(" ").length;
+      const remainder = text.slice(used).trim();
+      if (remainder) lines[maxLines - 1] = lines[maxLines - 1].replace(/\s+$/, "") + "…";
+    }
     return lines;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 flex flex-col relative">
-      {/* Background image - positioned absolutely behind everything */}
+    <div className="min-h-screen p-4 flex flex-col relative">
+      {/* Background image - fixed behind everything, non-interactive */}
       {settings.backgroundMode === 'image' && settings.backgroundUrl && (
         <div
-          className="absolute inset-0 flex justify-center items-center"
-          style={{ zIndex: 0, pointerEvents: 'none' }}
+          className="fixed inset-0 flex justify-center items-center pointer-events-none"
+          style={{ zIndex: 0 }}
         >
           <img
             src={settings.backgroundUrl}
@@ -262,7 +267,7 @@ export default function WheelPanel({
       {/* Main content wrapper - positioned above background */}
       <div className="flex-grow relative" style={{ zIndex: 1 }}>
         {/* Wheel container */}
-        <div className="relative mx-auto" style={{ width: size, height: size }}>
+        <div className="relative mx-auto wheel-container" style={{ width: size, height: size }}>
           {/* Triangle indicator - higher z-index */}
           <div className="absolute left-1/2 -translate-x-1/2 -top-12 z-40 triangle-indicator">
             <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[40px] border-b-red-600"></div>
@@ -273,38 +278,49 @@ export default function WheelPanel({
             <g ref={wheelRef} style={wheelStyle}>
               {settings.slices.map((slice, i) => {
                 const isViewed = viewedSlices.includes(slice.id);
-                const lines = wrapText(slice.label, radius * 0.8);
+                // Dynamic font sizes relative to wheel size
+                const numberFont = Math.max(26, Math.round(size / 14));   // ~36 at size=500
+                const labelFont = Math.max(16, Math.round(size / 23));    // ~22 at size=500
+                const labelLineHeight = Math.round(labelFont * 1.15);
+                const textRing = radius * 0.50; // where labels sit
+                const arc = 2 * Math.PI * textRing * (sliceAngle / 360);
+                const approxCharWidth = labelFont * 0.6;
+                const charsPerLine = Math.max(8, Math.floor(arc / approxCharWidth));
+                const lines = wrapToLines(slice.label, charsPerLine, 2);
+
                 return (
                   <g key={slice.id}>
-                    <path 
-                      d={slicePath(i)} 
+                    <path
+                      d={slicePath(i)}
                       fill={isViewed ? desaturate(slice.color) : slice.color}
                       stroke="#333"
                       strokeWidth="2"
                       opacity={isViewed ? 0.5 : 1}
                     />
                     <g transform={`translate(${cx},${cy}) rotate(${i * sliceAngle + sliceAngle / 2})`}>
+                      {/* Number at top */}
                       <text
                         x="0"
-                        y={-radius * 0.7}
+                        y={-radius * 0.72}
                         textAnchor="middle"
                         fill="white"
-                        fontSize="28"
+                        fontSize={numberFont}
                         fontWeight="bold"
-                        className="drop-shadow-lg wheel-slice-text"
+                        className="wheel-slice-text"
                       >
                         {i + 1}
                       </text>
+                      {/* Label, up to two lines */}
                       {lines.map((line, lineIndex) => (
                         <text
                           key={lineIndex}
                           x="0"
-                          y={-radius * 0.45 + (lineIndex * 18)}
+                          y={-textRing + lineIndex * labelLineHeight}
                           textAnchor="middle"
                           fill="white"
-                          fontSize="16"
+                          fontSize={labelFont}
                           fontWeight="600"
-                          className="drop-shadow wheel-slice-text"
+                          className="wheel-slice-text"
                         >
                           {line}
                         </text>
