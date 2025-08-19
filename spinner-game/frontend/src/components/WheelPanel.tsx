@@ -118,10 +118,9 @@ export default function WheelPanel({
 
   const wheelRef = useRef<SVGGElement>(null);
   const wheelStyle: React.CSSProperties = {
-    width: size,
-    height: size,
     transform: "rotate(" + rotation + "deg)",
     transition: spinning ? "transform 3.8s cubic-bezier(0.17,0.67,0.32,1.29)" : "none",
+    transformOrigin: "center",
   };
 
   // normalize residual rotation [0..360)
