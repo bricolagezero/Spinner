@@ -197,9 +197,9 @@ export default function WheelPanel({
       // Inform external listeners when the wheel visually stops
       onSpinEnd?.();
 
-      // Wait for whoosh to finish, then pause 1s, then perform actions
+      // Wait for whoosh to finish, then pause 2s, then perform actions
       try { await (whooshPromiseRef.current || Promise.resolve()); } catch {}
-      await sleep(1000);
+      await sleep(2000); // was 1000ms
 
       setShowModal(true);
       if (settings.timerEnabled) {
@@ -407,12 +407,15 @@ export default function WheelPanel({
                     <path
                       d={slicePath(i)}
                       // Light gray instead of transparency when viewed
-                      fill={isViewed ? "#e5e7eb" : slice.color}
+                      // moved fill into style to enable CSS transition
                       stroke="#333"
                       strokeWidth="2"
                       opacity={1}
-                      className="slice-shadow"
-                      style={{ transition: "filter 0.3s ease, opacity 0.3s ease" }}
+                      className="slice-shadow slice-fill-anim"
+                      style={{
+                        fill: isViewed ? "#e5e7eb" : slice.color,
+                        transition: "fill 0.8s ease-in-out, filter 0.3s ease, opacity 0.3s ease",
+                      }}
                     />
                     <g transform={`translate(${cx},${cy}) rotate(${i * sliceAngle + sliceAngle / 2})`}>
                       {/* Circle for number/icon at the top edge */}
@@ -534,7 +537,7 @@ export default function WheelPanel({
                   className="pointer-events-none absolute inset-0"
                   viewBox="0 0 100 100"
                   preserveAspectRatio="none"
-                  style={{ overflow: "visible" }}  // ensure stroke isn’t clipped
+                  style={{ overflow: "visible" }}
                 >
                   <defs>
                     <linearGradient id="sliceModalBorderGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -545,9 +548,9 @@ export default function WheelPanel({
                       <stop offset="100%" stopColor="#7c3aed" />
                     </linearGradient>
                   </defs>
-                  {/* Animated stroke at 5px, inset by half the stroke (2.5) */}
+                  {/* Animated stroke at 5px, inset slightly more to prevent clipping */}
                   <rect
-                    x="2.5" y="2.5" width="95" height="95" rx="12" ry="12"
+                    x="3" y="3" width="94" height="94" rx="12%" ry="12%"
                     fill="none"
                     stroke="url(#sliceModalBorderGrad)"
                     strokeWidth="5"
@@ -559,7 +562,7 @@ export default function WheelPanel({
                   </rect>
                   {/* Subtle inner outline aligned to the same geometry */}
                   <rect
-                    x="2.5" y="2.5" width="95" height="95" rx="12" ry="12"
+                    x="3" y="3" width="94" height="94" rx="12%" ry="12%"
                     fill="none"
                     stroke="#000"
                     strokeOpacity="0.08"
@@ -644,9 +647,10 @@ export default function WheelPanel({
                           </button>
                         ) : (
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               setShowModal(false);
                               setSliceCountdown(null);
+                              await sleep(1000); // 1s pause before the next spin
                               spin();
                             }}
                             className="px-8 py-4 text-lg md:text-xl bg-blue-500 text-white rounded-2xl hover:bg-blue-600 font-semibold shadow-xl"
