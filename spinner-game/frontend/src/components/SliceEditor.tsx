@@ -84,7 +84,7 @@ export default function SliceEditor({
             <input 
               type="number" 
               className="w-24 px-2 py-1 rounded border" 
-              value={slice.timerSeconds || ""} 
+              value={slice.timerSeconds || 0} 
               placeholder="None"
               onChange={(e) => onChange({ timerSeconds: e.target.value ? Math.max(0, parseInt(e.target.value || "0")) : undefined })} 
             />

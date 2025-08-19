@@ -40,6 +40,7 @@ export default function WheelPanel({
   const [countdown, setCountdown] = useState<number | null>(null);
   const [showCompletion, setShowCompletion] = useState(false);
   const [sliceCountdown, setSliceCountdown] = useState<number | null>(null);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   // responsive size - make it smaller
   const [size, setSize] = useState(500);
@@ -86,6 +87,7 @@ export default function WheelPanel({
     return settings.slices.findIndex((s) => s.id === id);
   };
 
+  // In the spin function, ensure wheel stops with slice under triangle
   const spin = () => {
     if (spinning) return;
     if ((!settings.allowRepeats && activeSlices.length === 0) || settings.slices.length === 0) return;
@@ -95,11 +97,14 @@ export default function WheelPanel({
     
     const idx = pickIndex();
     
-    // Calculate rotation so winning slice appears at top (12 o'clock position)
-    // The pointer is at the top, so we need to rotate the wheel so the winning slice ends up there
-    const targetAngle = -idx * sliceAngle; // Negative because wheel rotates clockwise
+    // Calculate rotation to center the winning slice under the triangle
+    const sliceAngle = 360 / settings.slices.length;
+    const sliceStartAngle = idx * sliceAngle;
+    const sliceCenterAngle = sliceStartAngle + (sliceAngle / 2);
+    
+    // Adjust final rotation to center slice under triangle (which is at top/0 degrees)
     const spins = 6 + Math.floor(Math.random() * 3);
-    const finalRotation = spins * 360 + targetAngle;
+    const finalRotation = spins * 360 + (360 - sliceCenterAngle);
     
     setSpinning(true);
     setResultIndex(idx);
@@ -252,7 +257,7 @@ export default function WheelPanel({
 
       {/* pointer (larger and centered) */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 -top-12 z-20"
+        className="absolute left-1/2 -translate-x-1/2 -top-12 z-30"
         style={{
           width: 0,
           height: 0,
@@ -411,20 +416,22 @@ export default function WheelPanel({
                 
                 <h2 className="text-3xl font-bold mb-4 text-center" style={{ fontFamily: 'Roboto, sans-serif' }}>{current.label}</h2>
                 {current.outcomeImageUrl && (
-                  <div className="w-full flex justify-center mb-4">
-                    <img
-                      src={current.outcomeImageUrl}
-                      className="rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform object-contain"
-                      style={{ 
-                        maxWidth: '100%',
-                        maxHeight: '45vh',
-                        width: 'auto',
-                        height: 'auto',
-                        transform: `scale(${current.outcomeImageScale ?? 0.6})`
-                      }}
-                      alt=""
-                      onClick={() => window.open(current.outcomeImageUrl, '_blank')}
-                    />
+                  <div className="w-full flex justify-center mb-4 px-4">
+                    <div className="max-w-full" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+                      <img 
+                        src={current.outcomeImageUrl}
+                        className="rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform object-contain"
+                        style={{ 
+                          maxWidth: '100%',
+                          maxHeight: '45vh',
+                          width: 'auto',
+                          height: 'auto',
+                          transform: `scale(${current.outcomeImageScale ?? 0.6})`
+                        }}
+                        alt=""
+                        onClick={() => window.open(current.outcomeImageUrl, '_blank')}
+                      />
+                    </div>
                   </div>
                 )}
                 {current.outcomeText && (
@@ -480,6 +487,47 @@ export default function WheelPanel({
                 style={{ fontFamily: 'Roboto, sans-serif' }}
               >
                 Restart Activity
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Completion Modal - All Slices Viewed */}
+      <AnimatePresence>
+        {showCompletionModal && (
+          <motion.div 
+            className="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", damping: 10, stiffness: 100 }}
+              className="bg-gradient-to-br from-green-400 to-blue-500 text-white rounded-3xl p-8 md:p-12 max-w-lg text-center shadow-2xl"
+            >
+              <motion.h2 
+                className="text-4xl md:text-5xl font-bold mb-6"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 1, repeat: Infinity }}
+                style={{ fontFamily: 'Roboto, sans-serif' }}
+              >
+                Well Done! 🎉
+              </motion.h2>
+              <p className="text-lg md:text-xl mb-8 opacity-90" style={{ fontFamily: 'Roboto, sans-serif' }}>
+                You've viewed all the slices. Great job!
+              </p>
+              <button 
+                onClick={() => {
+                  setShowCompletionModal(false);
+                  // Reset or navigate away
+                }} 
+                className="px-8 py-4 bg-white text-green-500 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-lg"
+                style={{ fontFamily: 'Roboto, sans-serif' }}
+              >
+                Finish
               </button>
             </motion.div>
           </motion.div>
