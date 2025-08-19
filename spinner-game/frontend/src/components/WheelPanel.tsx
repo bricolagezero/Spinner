@@ -41,16 +41,15 @@ export default function WheelPanel({
   const [sliceCountdown, setSliceCountdown] = useState<number | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [viewedSlices, setViewedSlices] = useState<string[]>([]);
-  // NEW: track spins taken and initial total slices for the session
-  const [spinsTaken, setSpinsTaken] = useState(0);
+  // Track initial total slices to keep denominator fixed for the session
   const initialTotalRef = useRef<number>(settings.slices.length);
 
   // responsive size - bigger wheel, still safe on small screens
   const [size, setSize] = useState(500);
   useEffect(() => {
     const onResize = () =>
-      // use a slightly smaller factor to avoid clipping header/footer
-      setSize(Math.max(340, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.65)));
+      // increase factor so the wheel is larger
+      setSize(Math.max(340, Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.8)));
     onResize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -107,8 +106,13 @@ export default function WheelPanel({
     if (spinning) return;
     if ((!settings.allowRepeats && activeSlices.length === 0) || settings.slices.length === 0) return;
     onSpinStart?.();
-    // lock initial total the first time we actually spin
-    if (spinsTaken === 0) {
+
+    // Lock denominator on first spin (no slices seen/disabled yet)
+    const seenCountNow = new Set<string>([
+      ...viewedSlices,
+      ...settings.slices.filter(s => s.disabled).map(s => s.id),
+    ]).size;
+    if (seenCountNow === 0) {
       initialTotalRef.current = settings.slices.length;
     }
 
@@ -158,9 +162,6 @@ export default function WheelPanel({
       if (ev.target !== el) return;
 
       setSpinning(false);
-
-      // Count this spin as completed
-      setSpinsTaken((n) => Math.min(n + 1, initialTotalRef.current));
 
       // Inform external listeners when the wheel visually stops
       onSpinEnd?.();
@@ -230,8 +231,7 @@ export default function WheelPanel({
     const resetSlices = settings.slices.map(s => ({ ...s, disabled: false }));
     setSettings({ ...settings, slices: resetSlices });
     setViewedSlices([]);
-    // Reset counters and re-baseline total to current slices
-    setSpinsTaken(0);
+    // Reset denominator to current slices
     initialTotalRef.current = resetSlices.length;
   };
 
@@ -262,8 +262,12 @@ export default function WheelPanel({
     return out;
   };
 
-  // Derived: Spins Left now simply counts down by spins taken from the initial total.
-  const spinsLeft = Math.max(0, initialTotalRef.current - spinsTaken);
+  // Derived: spinsLeft = initial total - unique seen (viewed or disabled)
+  const uniqueSeenCount = new Set<string>([
+    ...viewedSlices,
+    ...settings.slices.filter((s) => s.disabled).map((s) => s.id),
+  ]).size;
+  const spinsLeft = Math.max(0, initialTotalRef.current - uniqueSeenCount);
 
   return (
     <div className="min-h-screen p-4 flex flex-col relative">
@@ -271,7 +275,7 @@ export default function WheelPanel({
       {settings.backgroundMode === 'image' && settings.backgroundUrl && (
         <div
           className="fixed inset-0 flex justify-center items-center pointer-events-none"
-          style={{ zIndex: -1 }}
+          style={{ zIndex: 0 }}
         >
           <img
             src={settings.backgroundUrl}
@@ -310,7 +314,7 @@ export default function WheelPanel({
             <div>SPIN</div>
           </button>
 
-          {/* Spins Left counter - right side (now fixed to initial total and decrements each spin) */}
+          {/* Spins Left counter - right side (fixed denominator, unique seen counter) */}
           <div className="absolute -right-20 top-1/2 -translate-y-1/2 w-20 md:w-24 rounded-xl bg-white/10 border border-white/20 backdrop-blur-md text-white text-center py-2 shadow-lg">
             <div className="text-[10px] md:text-xs opacity-80">Spins Left</div>
             <div className="text-lg md:text-xl font-bold">

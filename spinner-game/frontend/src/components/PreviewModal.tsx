@@ -28,9 +28,9 @@ export default function PreviewModal({ settings }: { settings: GameSettings }) {
               <button type="button" className="px-4 py-2 rounded-lg bg-slate-900 text-white" onClick={() => setOpen(false)}>Close</button>
             </div>
             <div className="p-0">
-              <div className="min-h-[70vh] w-full text-white relative" style={bgStyle}>
+              <div className="min-h-[60vh] w-full text-white relative" style={bgStyle}>
                 <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-transparent to-black/50" />
-                <div className="relative z-10 w-full max-w-[1600px] mx-auto px-6 py-6 flex flex-col gap-6 min-h-[70vh]">
+                <div className="relative z-10 w-full max-w-[1600px] mx-auto px-6 py-6 flex flex-col gap-6 min-h-[60vh]">
                   <motion.div
                     initial={{ x: -40, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -40,13 +40,13 @@ export default function PreviewModal({ settings }: { settings: GameSettings }) {
                     <h1 className="text-4xl md:text-5xl font-extrabold leading-tight drop-shadow-sm">{local.title}</h1>
                     {local.subtitle && <p className="mt-2 text-base md:text-lg opacity-90">{local.subtitle}</p>}
                   </motion.div>
-                  <div className="flex-1 flex items-center justify-center">
+                  <div className="flex items-center justify-center py-2">
                     <div className="rounded-3xl bg-black/25 backdrop-blur-md p-6 md:p-10 shadow-[0_20px_80px_rgba(0,0,0,0.45)]">
                       <WheelPanel settings={local} setSettings={setLocal as any} sleekMode />
                     </div>
                   </div>
                   {local.footer && (
-                    <div className="mt-4">
+                    <div className="mt-2">
                       <div className="rounded-xl bg-black/30 backdrop-blur-md px-4 py-2 inline-block">
                         <p className="text-sm opacity-90 m-0">{local.footer}</p>
                       </div>
