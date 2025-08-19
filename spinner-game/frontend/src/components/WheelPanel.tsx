@@ -180,8 +180,9 @@ export default function WheelPanel({
   const wheelStyle: React.CSSProperties = {
     transform: "rotate(" + rotation + "deg)",
     transition: spinning ? `transform ${SPIN_DURATION_MS / 1000}s cubic-bezier(0.17,0.67,0.32,1.29)` : "none",
-    transformOrigin: "center",
-    transformBox: "fill-box",
+    // Use the SVG viewport for a stable origin (prevents jump when slice animates)
+    transformOrigin: "50% 50%",
+    transformBox: "view-box",
     willChange: "transform",
   };
 
