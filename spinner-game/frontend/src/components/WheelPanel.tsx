@@ -51,6 +51,9 @@ export default function WheelPanel({
   const [fireworkFor, setFireworkFor] = useState<string | null>(null);
   const FIREWORK_DURATION_MS = 1000;
 
+  // Track the exact selected slice by id to avoid index drift mid-spin
+  const selectedSliceIdRef = useRef<string | null>(null);
+
   // responsive size - bigger wheel, still safe on small screens
   const [size, setSize] = useState(500);
   useEffect(() => {
@@ -147,6 +150,9 @@ export default function WheelPanel({
     const idx = pickIndex();
     if (idx < 0) return; // safety
 
+    // Capture selected slice id at spin start
+    selectedSliceIdRef.current = settings.slices[idx]?.id ?? null;
+
     // Angle math
     const sliceAngle = 360 / settings.slices.length;
     const sliceStartAngle = idx * sliceAngle;
@@ -202,9 +208,9 @@ export default function WheelPanel({
       // Inform external listeners when the wheel visually stops
       onSpinEnd?.();
 
-      // Immediately gray out the landed slice (fade begins now)
-      if (resultIndex != null) {
-        const landedId = settings.slices[resultIndex].id;
+      // Immediately gray out the landed slice (fade begins now) using captured id
+      const landedId = selectedSliceIdRef.current ?? (resultIndex != null ? settings.slices[resultIndex]?.id : null);
+      if (landedId) {
         if (!viewedSlices.includes(landedId)) setViewedSlices(prev => [...prev, landedId]);
         // Fireworks around chosen slice for 1s
         setFireworkFor(landedId);
@@ -220,8 +226,10 @@ export default function WheelPanel({
         const totalSeconds = (settings.timerMinutes || 0) * 60 + (settings.timerSeconds || 0);
         setCountdown(totalSeconds);
       }
-      if (resultIndex != null && settings.slices[resultIndex].timerSeconds) {
-        setSliceCountdown(settings.slices[resultIndex].timerSeconds);
+      // Use id to fetch slice timer safely
+      if (landedId) {
+        const s = settings.slices.find(sl => sl.id === landedId);
+        if (s?.timerSeconds) setSliceCountdown(s.timerSeconds);
       }
     };
     el.addEventListener("transitionend", onEnd);
@@ -240,7 +248,12 @@ export default function WheelPanel({
     return () => clearTimeout(id);
   }, [sliceCountdown]);
 
-  const current = resultIndex != null ? settings.slices[resultIndex] : null;
+  // Current slice for modal: prefer captured id; fallback to resultIndex
+  const current = useMemo(() => {
+    const id = selectedSliceIdRef.current;
+    if (id) return settings.slices.find(s => s.id === id) || null;
+    return resultIndex != null ? settings.slices[resultIndex] || null : null;
+  }, [settings.slices, resultIndex]);
 
   const handleRestart = () => {
     // Session reset only; do not mutate slice objects
@@ -355,7 +368,6 @@ export default function WheelPanel({
 
           {/* SVG Wheel */}
           <svg width={size} height={size} className="drop-shadow-2xl" style={{ overflow: "visible" }}>
-            {/* slice shadow filter via CSS class or fallback to plain */}
             <g ref={wheelRef} style={wheelStyle}>
               {settings.slices.map((slice, i) => {
                 const isViewed = viewedSlices.includes(slice.id);
