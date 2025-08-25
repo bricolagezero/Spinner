@@ -759,7 +759,7 @@ export default function WheelPanel({
                 }} 
                 className="px-8 py-4 bg-white text-green-500 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-lg"
               >
-                Finish
+                FINISH
               </button>
             </motion.div>
           </motion.div>
