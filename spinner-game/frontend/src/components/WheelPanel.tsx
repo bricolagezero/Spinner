@@ -716,7 +716,7 @@ export default function WheelPanel({
                             }}
                             className="px-8 py-4 text-lg md:text-xl bg-blue-500 text-white rounded-2xl hover:bg-blue-600 font-semibold shadow-xl"
                           >
-                            Spin Again
+                            SPIN AGAIN
                           </button>
                         )}
                       </div>
@@ -749,11 +749,9 @@ export default function WheelPanel({
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ duration: 1, repeat: Infinity }}
               >
-                Activity Complete! 🎉
+                Activity Complete!
               </motion.h2>
-              <p className="text-lg md:text-xl mb-8 opacity-90">
-                Congratulations! You've viewed all slices.
-              </p>
+             
               <button 
                 onClick={() => {
                   setShowCompletionModal(false);
