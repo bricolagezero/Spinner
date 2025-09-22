@@ -94,7 +94,7 @@ button {
   animation: gradient-rotate 3s linear infinite;
   background-size: 200% 200%;
 }
-
+.wheel-slice-text {font-size: 26px!important;}
 /* Subtle float for images/content */
 @keyframes float-slow {
   0%, 100% { transform: translateY(0); }
