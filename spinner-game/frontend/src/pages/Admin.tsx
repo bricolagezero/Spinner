@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { createGame, getGame, login } from "../utils/api";
 import { defaultSettings } from "../utils/defaults";
@@ -21,6 +21,7 @@ export default function AdminPage() {
   const [deleteModalSlug, setDeleteModalSlug] = useState<string | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [fontSize, setFontSize] = useState<string>('16');
 
   async function load() {
     setLoading(true);
@@ -78,6 +79,27 @@ export default function AdminPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    const stored = localStorage.getItem('app:fontSizePx');
+    const initial = stored && /^\d+$/.test(stored)
+      ? stored
+      : (getComputedStyle(document.documentElement)
+          .getPropertyValue('--app-font-size')
+          .replace('px', '')
+          .trim() || '16');
+    setFontSize(initial);
+    document.documentElement.style.setProperty('--app-font-size', `${initial}px`);
+  }, []);
+
+  const handleFontSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value.replace(/[^0-9]/g, '');
+    setFontSize(v);
+    if (v) {
+      document.documentElement.style.setProperty('--app-font-size', `${v}px`);
+      localStorage.setItem('app:fontSizePx', v);
+    }
+  };
+
   async function onNewSpinner() {
     try {
       const name = window.prompt("Name your spinner:", "New Spin Game") || "New Spin Game";
@@ -117,13 +139,6 @@ export default function AdminPage() {
             <h1 className="text-3xl font-bold m-0">Spinners</h1>
             <p className="text-gray-400 mt-1">Create, edit, and share</p>
           </div>
-
-          <button
-            onClick={onNewSpinner}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-          >
-            + New Spinner
-          </button>
         </div>
 
         <div>
@@ -205,6 +220,13 @@ export default function AdminPage() {
             message={`Are you sure you want to delete "${titles[deleteModalSlug] || deleteModalSlug}"? This action cannot be undone.`}
           />
         )}
+
+        <button
+          onClick={onNewSpinner}
+          className="fixed bottom-4 left-4 z-[9999] bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+        >
+          + New Spinner
+        </button>
       </div>
     </div>
   );

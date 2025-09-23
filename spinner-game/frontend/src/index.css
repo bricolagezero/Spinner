@@ -31,6 +31,17 @@
   }
 }
 
+/* Ensure global font-size overrides Tailwind base */
+@layer base {
+  html {
+    /* Controlled via Admin page; falls back to 16px */
+    font-size: var(--app-font-size, 16px);
+  }
+  body {
+    font-size: 1rem;
+  }
+}
+
 /* Spinner-specific styles */
 @layer components {
   .spinner-shadow {
@@ -111,6 +122,7 @@ button {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
+
 
 /* Optional: subtle breathing/glow effect hooks */
 @keyframes wheel-breathe {
@@ -208,3 +220,7 @@ button {
 .firework-icon.firework-once .cls-3 { animation-name: fireworthree; animation-delay: .11s; }
 .firework-icon.firework-once .cls-2 { animation-name: fireworktwo;  animation-delay: .41s; }
 .firework-icon.firework-once .cls-3 { animation-name: fireworthree; animation-delay: .11s; }
+
+:root {
+  --app-font-size: 16px;
+}
