@@ -400,7 +400,7 @@ export default function WheelPanel({
                 const labelFont = Math.max(14, Math.round(size / 22));
                 const approxCharWidth = labelFont * 0.6;
                 const charsPerLine = Math.max(6, Math.floor(arc / approxCharWidth));
-                const maxLines = 3;
+                const maxLines = 4; // was 3
                 const lines = wrapIntoLines(slice.label, charsPerLine).slice(0, maxLines);
                 const labelLineHeight = Math.round(labelFont * 1.12);
 
@@ -472,7 +472,7 @@ export default function WheelPanel({
                         </text>
                       )}
 
-                      {/* Label - up to 3 lines, start ~50px below the circle */}
+                      {/* Label - up to 4 lines, start ~50px below the circle */}
                       {lines.map((line, lineIndex) => (
                         <text
                           key={lineIndex}
