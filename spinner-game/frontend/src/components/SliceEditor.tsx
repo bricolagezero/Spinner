@@ -68,11 +68,7 @@ export default function SliceEditor({
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Font size</span>
-            <input type="number" className="w-24 px-2 py-1 rounded border" value={slice.outcomeFontSize ?? 20}
-                   onChange={(e) => onChange({ outcomeFontSize: Math.max(12, Math.min(72, parseInt(e.target.value || "20"))) })} />
-          </div>
+          {/* Removed per-slice font size control; font is now auto-sized globally based on longest label */}
           <div className="flex items-center gap-2">
             <span className="text-sm">Image scale</span>
             <input type="range" min={20} max={100} value={Math.round((slice.outcomeImageScale ?? 0.6) * 100)}
