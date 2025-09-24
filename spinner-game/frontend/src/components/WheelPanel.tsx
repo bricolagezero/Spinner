@@ -94,6 +94,44 @@ export default function WheelPanel({
   );
   const sliceAngle = 360 / Math.max(1, settings.slices.length);
 
+  // Precompute label typography globally so all slices use the same font size
+  // We choose the largest font that allows the longest label to wrap within maxLines.
+  const {
+    labelFont,
+    labelLineHeight,
+    charsPerLine,
+    labelStartOffset,
+  } = useMemo(() => {
+    const maxLines = 4;
+    // Text is placed on a ring inside the slice; approximate arc length available
+    const textRing = radius * 0.5;
+    // Slightly increase utilization of arc to fit more characters
+    const arc = 2 * Math.PI * textRing * (sliceAngle / 360) * 0.95;
+    // Base font starts slightly smaller than before
+    let f = Math.max(12, Math.round(size / 24));
+    const labels = settings.slices.map(s => (s.label || "").trim());
+    const longest = labels.reduce((a, b) => (b.length > a.length ? b : a), "");
+    // A bit tighter char width estimate to be less conservative
+    const charWidthFactor = 0.55;
+    // Find the largest font that fits within maxLines for the longest label
+    for (; f > 10; f--) {
+      const approxCharWidth = f * charWidthFactor;
+      const cpl = Math.max(6, Math.floor(arc / approxCharWidth));
+      const lines = wrapIntoLines(longest, cpl);
+      if (lines.length <= maxLines) break;
+    }
+    const approxCharWidth = f * charWidthFactor;
+    const cpl = Math.max(6, Math.floor(arc / approxCharWidth));
+    return {
+      labelFont: f,
+      // Tighter line spacing
+      labelLineHeight: Math.round(f * 1.06),
+      charsPerLine: cpl,
+      // Reduce padding below the icon circle to pack text closer
+      labelStartOffset: 28,
+    };
+  }, [radius, size, sliceAngle, settings.slices.map(s => s.label).join("|")]);
+
   // audio ticks
   const audioCtxRef = useRef<AudioContext | null>(null);
   useEffect(() => {
@@ -394,15 +432,11 @@ export default function WheelPanel({
                 const isViewed = viewedSlices.includes(slice.id);
                 // Smaller per-slice circle; number font derived from circle size
                 const textRing = radius * 0.5;
-                const arc = 2 * Math.PI * textRing * (sliceAngle / 360) * 0.9;
+                // Use same arc assumption as in the global calc for consistency
+                const arc = 2 * Math.PI * textRing * (sliceAngle / 360) * 0.95;
 
-                // Labels (unchanged)
-                const labelFont = Math.max(14, Math.round(size / 22));
-                const approxCharWidth = labelFont * 0.6;
-                const charsPerLine = Math.max(6, Math.floor(arc / approxCharWidth));
-                const maxLines = 4; // was 3
+                const maxLines = 4;
                 const lines = wrapIntoLines(slice.label, charsPerLine).slice(0, maxLines);
-                const labelLineHeight = Math.round(labelFont * 1.12);
 
                 // Make the circle smaller
                 const baseDiameter = Math.min(84, Math.max(40, Math.round(size * 0.12)));
@@ -410,7 +444,7 @@ export default function WheelPanel({
                 const circleRadius = circleDiameter / 2;
                 const circleCY = -radius;
                 // tighter spacing beneath smaller circle
-                const labelStartY = circleCY + circleRadius + 36;
+                const labelStartY = circleCY + circleRadius + labelStartOffset;
 
                 // Number font fits inside smaller circle
                 const numberFont = Math.max(18, Math.floor(circleDiameter * 0.55));
@@ -472,7 +506,7 @@ export default function WheelPanel({
                         </text>
                       )}
 
-                      {/* Label - up to 4 lines, start ~50px below the circle */}
+                      {/* Label - up to 4 lines, tightened spacing and padding */}
                       {lines.map((line, lineIndex) => (
                         <text
                           key={lineIndex}
