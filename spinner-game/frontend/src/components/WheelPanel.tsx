@@ -331,7 +331,7 @@ export default function WheelPanel({
   };
 
   // Helper: wrap text into lines with a chars-per-line cap (no ellipsis)
-  const wrapIntoLines = (text: string, charsPerLine: number) => {
+  function wrapIntoLines(text: string, charsPerLine: number) {
     const words = text.trim().split(/\s+/);
     const out: string[] = [];
     let line = "";
@@ -346,7 +346,7 @@ export default function WheelPanel({
     }
     if (line) out.push(line);
     return out;
-  };
+  }
 
   // Derived: spinsLeft = initial total - session-unique seen
   const uniqueSeenCount = Math.min(
