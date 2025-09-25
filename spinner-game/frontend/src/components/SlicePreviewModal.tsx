@@ -28,7 +28,7 @@ export const SlicePreviewModal: React.FC<SlicePreviewModalProps> = ({ isOpen, on
         </button>
 
         <h2 className="text-3xl font-bold mb-4 text-center">
-          {(slice.sameHeadingAsLabel === false && (slice.modalHeading || '').trim().length > 0)
+          {(slice.sameHeadingAsLabel === false && (slice.modalHeading || "").trim().length > 0)
             ? (slice.modalHeading as string)
             : slice.label}
         </h2>

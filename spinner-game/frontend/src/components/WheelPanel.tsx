@@ -686,7 +686,7 @@ export default function WheelPanel({
                       className="px-4 py-2 rounded-full bg-slate-900/85 text-white shadow-lg"
                     >
                       <h2 className="m-0 text-2xl md:text-3xl font-bold text-center">
-                        {(current.sameHeadingAsLabel === false && (current.modalHeading || '').trim().length > 0)
+                        {(current.sameHeadingAsLabel === false && (current.modalHeading || "").trim().length > 0)
                           ? (current.modalHeading as string)
                           : current.label}
                       </h2>
