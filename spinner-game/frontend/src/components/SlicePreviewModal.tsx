@@ -62,11 +62,3 @@ export const SlicePreviewModal: React.FC<SlicePreviewModalProps> = ({ isOpen, on
     </div>
   );
 };
-          className="mt-6 px-6 py-3 bg-pink-600 hover:bg-pink-700 rounded-xl text-white text-lg font-semibold transition-colors shadow-lg"
-        >
-          Close Preview
-        </button>
-      </motion.div>
-    </div>
-  );
-};

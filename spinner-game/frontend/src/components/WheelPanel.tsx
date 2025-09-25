@@ -804,12 +804,4 @@ export default function WheelPanel({
     </div>
   );
 }
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 

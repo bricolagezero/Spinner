@@ -183,11 +183,3 @@ export default function SliceEditor({
     </>
   );
 }
-        isOpen={showPreview}
-        onClose={() => setShowPreview(false)}
-        slice={slice}
-        settings={settings}
-      />
-    </>
-  );
-}
