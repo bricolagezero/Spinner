@@ -3,14 +3,6 @@ import { X } from 'lucide-react';
 import { Slice, GameSettings } from '../types/index';
 import { motion } from 'framer-motion';
 
-// Augment Slice to include modal fields used by the UI
-declare module "../types" {
-  interface Slice {
-    modalHeading?: string;
-    sameHeadingAsLabel?: boolean;
-  }
-}
-
 interface SlicePreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -62,6 +54,14 @@ export const SlicePreviewModal: React.FC<SlicePreviewModalProps> = ({ isOpen, on
         )}
         <button 
           onClick={onClose} 
+          className="mt-6 px-6 py-3 bg-pink-600 hover:bg-pink-700 rounded-xl text-white text-lg font-semibold transition-colors shadow-lg"
+        >
+          Close Preview
+        </button>
+      </motion.div>
+    </div>
+  );
+};
           className="mt-6 px-6 py-3 bg-pink-600 hover:bg-pink-700 rounded-xl text-white text-lg font-semibold transition-colors shadow-lg"
         >
           Close Preview
