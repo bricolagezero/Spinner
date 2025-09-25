@@ -27,7 +27,7 @@ export interface Slice {
   outcomeFontSize?: number;
   outcomeImageScale?: number;
   disabled?: boolean;
-  timerSeconds?: number; // Add per-slice timer
-  modalHeading?: string; // Custom heading for the popup modal
-  sameHeadingAsLabel?: boolean; // If false, use modalHeading instead of label
+  timerSeconds?: number; // per-slice timer
+  modalHeading?: string; // custom heading for the popup modal (H2)
+  sameHeadingAsLabel?: boolean; // if false, use modalHeading instead of label
 }
