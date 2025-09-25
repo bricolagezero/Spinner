@@ -383,6 +383,8 @@ export default function EditorPage() {
                   outcomeText: "",
                   outcomeImageUrl: "",
                   disabled: false,
+                  modalHeading: "",
+                  sameHeadingAsLabel: true,
                 };
                 setSettings({ ...settings, slices: [...settings.slices, newSlice] });
               }}

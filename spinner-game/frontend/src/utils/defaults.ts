@@ -23,6 +23,8 @@ function makeSlice(n: number): Slice {
     outcomeText: "",
     outcomeImageUrl: "",
     disabled: false,
+    modalHeading: "",
+    sameHeadingAsLabel: true,
   };
 }
 
