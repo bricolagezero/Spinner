@@ -1,17 +1,9 @@
 import { useState } from "react";
-import { Slice, GameSettings } from "../types";
+import { Slice, GameSettings } from "../types/index";
 import { uploadFile } from "../utils/upload";
 import { API_BASE } from "../utils/api";
 import { Eye } from "lucide-react";
 import { SlicePreviewModal } from "./SlicePreviewModal";
-
-// Augment Slice to include modal fields used by the UI
-declare module "../types" {
-  interface Slice {
-    modalHeading?: string;
-    sameHeadingAsLabel?: boolean;
-  }
-}
 
 export default function SliceEditor({
   slice, index, settings, onChange, onRemove,
@@ -183,6 +175,14 @@ export default function SliceEditor({
       </div>
 
       <SlicePreviewModal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        slice={slice}
+        settings={settings}
+      />
+    </>
+  );
+}
         isOpen={showPreview}
         onClose={() => setShowPreview(false)}
         slice={slice}

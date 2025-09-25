@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { Slice, GameSettings } from '../types';
+import { Slice, GameSettings } from '../types/index';
 import { motion } from 'framer-motion';
 
 // Augment Slice to include modal fields used by the UI

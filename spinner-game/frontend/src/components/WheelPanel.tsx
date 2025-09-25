@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { GameSettings } from "../types";
+import { GameSettings } from "../types/index";
 
 // Augment Slice to include modal fields used by the UI
 declare module "../types" {
