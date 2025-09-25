@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Slice, GameSettings } from "../types/index";
+import type { Slice, GameSettings } from "../types";
 import { uploadFile } from "../utils/upload";
 import { API_BASE } from "../utils/api";
 import { Eye } from "lucide-react";

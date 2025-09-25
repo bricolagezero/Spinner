@@ -1,3 +1,3 @@
-import { GameSettings } from "../types/index";
+import type { GameSettings } from "../types";
 
 // ...existing code...

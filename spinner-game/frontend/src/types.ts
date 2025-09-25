@@ -1,33 +1,33 @@
-export type Slice = {
+export interface Slice {
   id: string;
   label: string;
   color: string;
+  iconUrl?: string;
   outcomeText?: string;
   outcomeImageUrl?: string;
-  iconUrl?: string;
+  outcomeFontSize?: number;
+  outcomeImageScale?: number;
   disabled?: boolean;
-  outcomeFontSize?: number;   // px
-  outcomeImageScale?: number; // 0.2–1.0
-  weight?: number;
   timerSeconds?: number;
-};
+  modalHeading?: string;
+  sameHeadingAsLabel?: boolean;
+}
 
-export type GameSettings = {
+export interface GameSettings {
   title: string;
   subtitle?: string;
   footer?: string;
   creator?: string;
-
-  backgroundMode?: "image" | "gradient";
+  backgroundMode: "image" | "gradient";
   backgroundUrl?: string;
   bgGradient?: { from: string; to: string; angle: number };
-  
-  brandedImageUrl?: string;
-  brandColors?: string[];
-
   allowRepeats: boolean;
   timerEnabled: boolean;
   timerSeconds: number;
   timerMinutes: number;
+  slices: Slice[];
+  brandedImageUrl?: string;
+  brandColors?: string[];
+}
   slices: Slice[];
 };

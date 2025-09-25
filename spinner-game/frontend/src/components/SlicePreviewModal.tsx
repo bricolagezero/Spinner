@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { Slice, GameSettings } from '../types/index';
+import type { Slice, GameSettings } from '../types';
 import { motion } from 'framer-motion';
 
 interface SlicePreviewModalProps {

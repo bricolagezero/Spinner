@@ -31,3 +31,5 @@ export interface Slice {
   modalHeading?: string; // custom heading for the popup modal (H2)
   sameHeadingAsLabel?: boolean; // if false, use modalHeading instead of label
 }
+
+export type { GameSettings, Slice } from "../types";
