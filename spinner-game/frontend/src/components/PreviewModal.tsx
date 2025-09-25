@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GameSettings } from "../types";
+import { GameSettings } from "../types/index";
 import WheelPanel from "./WheelPanel";
 import { motion } from "framer-motion";
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { getGame, updateGame, createGame, uploadImage } from "../utils/api";
-import { GameSettings } from "../types";
+import { GameSettings } from "../types/index";
 import WheelPanel from "../components/WheelPanel";
 import SliceEditor from "../components/SliceEditor";
 import PreviewModal from "../components/PreviewModal";
