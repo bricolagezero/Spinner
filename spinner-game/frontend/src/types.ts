@@ -29,5 +29,3 @@ export interface GameSettings {
   brandedImageUrl?: string;
   brandColors?: string[];
 }
-  slices: Slice[];
-};
