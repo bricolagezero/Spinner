@@ -3,6 +3,14 @@ import { X } from 'lucide-react';
 import { Slice, GameSettings } from '../types';
 import { motion } from 'framer-motion';
 
+// Augment Slice to include modal fields used by the UI
+declare module "../types" {
+  interface Slice {
+    modalHeading?: string;
+    sameHeadingAsLabel?: boolean;
+  }
+}
+
 interface SlicePreviewModalProps {
   isOpen: boolean;
   onClose: () => void;

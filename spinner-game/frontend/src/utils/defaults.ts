@@ -1,6 +1,14 @@
 // spinner-game/frontend/src/utils/defaults.ts
 import { GameSettings, Slice } from "../types";
 
+// Augment Slice to include modal fields used by the UI
+declare module "../types" {
+  interface Slice {
+    modalHeading?: string;
+    sameHeadingAsLabel?: boolean;
+  }
+}
+
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 const PALETTE = [

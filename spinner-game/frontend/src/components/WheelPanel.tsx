@@ -3,6 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { GameSettings } from "../types";
 
+// Augment Slice to include modal fields used by the UI
+declare module "../types" {
+  interface Slice {
+    modalHeading?: string;
+    sameHeadingAsLabel?: boolean;
+  }
+}
+
 // small helpers
 const DEFAULT_PALETTE = ["#ff4d4f", "#ffd43b", "#40c057", "#4dabf7", "#845ef7", "#f783ac", "#ffa94d", "#2f9e44"];
 const hexToRgb = (hex: string): [number, number, number] => {
